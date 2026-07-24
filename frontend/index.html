@@ -1,0 +1,4312 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Male Hospital — Hospital Management System</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700&display=swap"
+    rel="stylesheet" />
+  <style>
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --navy: #0F1F3D;
+      --navy-mid: #1A3160;
+      --teal: #0D7F7F;
+      --teal-light: #14A8A8;
+      --slate: #4A5568;
+      --silver: #CBD5E0;
+      --snow: #F7F9FC;
+      --white: #FFFFFF;
+      --danger: #C0392B;
+      --warn: #B7791F;
+      --success: #276749;
+      --text: #1A202C;
+      --text-muted: #718096;
+      --border: #E2E8F0;
+      --shadow-sm: 0 1px 3px rgba(0, 0, 0, .08);
+      --shadow-md: 0 4px 16px rgba(0, 0, 0, .10);
+      --shadow-lg: 0 8px 32px rgba(0, 0, 0, .12);
+      --radius: 8px;
+      --radius-lg: 12px;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--snow);
+      color: var(--text);
+      min-height: 100vh;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    /* ── HEADER ── */
+    header {
+      background: var(--navy);
+      color: var(--white);
+      padding: 0 32px;
+      height: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: var(--shadow-md);
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .logo-icon {
+      width: 36px;
+      height: 36px;
+      background: var(--teal);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .logo-icon svg {
+      width: 20px;
+      height: 20px;
+      fill: white;
+    }
+
+    .logo-text h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: 0.3px;
+    }
+
+    .logo-text span {
+      font-size: 10px;
+      color: var(--teal-light);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      font-weight: 500;
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .clock {
+      text-align: right;
+      font-size: 12px;
+      color: var(--silver);
+    }
+
+    .clock strong {
+      font-size: 15px;
+      color: white;
+      display: block;
+    }
+
+    /* ── LAYOUT ── */
+    .main-container {
+      display: flex;
+      min-height: calc(100vh - 64px);
+    }
+
+    /* ── SIDEBAR ── */
+    .sidebar {
+      width: 220px;
+      background: var(--white);
+      border-right: 1px solid var(--border);
+      padding: 24px 0;
+      flex-shrink: 0;
+    }
+
+    .sidebar-label {
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      padding: 0 20px 8px;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 11px 20px;
+      cursor: pointer;
+      color: var(--slate);
+      font-weight: 500;
+      font-size: 13.5px;
+      border-left: 3px solid transparent;
+      transition: all 0.15s;
+    }
+
+    .nav-item:hover {
+      background: var(--snow);
+      color: var(--navy);
+    }
+
+    .nav-item.active {
+      border-left-color: var(--teal);
+      background: #EBF8F8;
+      color: var(--teal);
+    }
+
+    .nav-item svg {
+      width: 17px;
+      height: 17px;
+      flex-shrink: 0;
+    }
+
+    .sidebar-divider {
+      height: 1px;
+      background: var(--border);
+      margin: 16px 0;
+    }
+
+    /* ── CONTENT ── */
+    .content {
+      flex: 1;
+      padding: 28px 32px;
+      overflow-x: hidden;
+    }
+
+    /* ── TABS ── */
+    .tab-header {
+      display: flex;
+      gap: 0;
+      border-bottom: 2px solid var(--border);
+      margin-bottom: 24px;
+    }
+
+    .tab-btn {
+      padding: 10px 24px;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-muted);
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -2px;
+      transition: all 0.15s;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .tab-btn.active {
+      color: var(--teal);
+      border-bottom-color: var(--teal);
+    }
+
+    .tab-btn:hover {
+      color: var(--navy);
+    }
+
+    .tab-count {
+      background: var(--teal);
+      color: white;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 1px 7px;
+      border-radius: 20px;
+    }
+
+    .tab-pane {
+      display: none;
+    }
+
+    .tab-pane.active {
+      display: block;
+    }
+
+    /* ── STATS CARDS ── */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 28px;
+    }
+
+    .stat-card {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 20px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .stat-card .label {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+
+    .stat-card .value {
+      font-size: 32px;
+      font-weight: 700;
+      font-family: 'Playfair Display', serif;
+      color: var(--navy);
+    }
+
+    .stat-card .sub {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    .stat-card.teal .value {
+      color: var(--teal);
+    }
+
+    .stat-card.warn .value {
+      color: var(--warn);
+    }
+
+    .stat-card.danger .value {
+      color: var(--danger);
+    }
+
+    /* ── PAGE TITLE ── */
+    .page-title {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .page-title h2 {
+      font-family: 'Playfair Display', serif;
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--navy);
+    }
+
+    .page-title p {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    /* ── BUTTONS ── */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 9px 18px;
+      border-radius: var(--radius);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      transition: all 0.15s;
+      font-family: 'Inter', sans-serif;
+    }
+
+    .btn-primary {
+      background: var(--teal);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: var(--teal-light);
+    }
+
+    .btn-secondary {
+      background: var(--white);
+      color: var(--slate);
+      border: 1px solid var(--border);
+    }
+
+    .btn-secondary:hover {
+      background: var(--snow);
+    }
+
+    .btn-danger {
+      background: var(--danger);
+      color: white;
+    }
+
+    .btn-danger:hover {
+      opacity: 0.9;
+    }
+
+    .btn-sm {
+      padding: 5px 12px;
+      font-size: 12px;
+    }
+
+    .btn svg {
+      width: 15px;
+      height: 15px;
+    }
+
+    /* ── MODAL ── */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 31, 61, 0.5);
+      z-index: 200;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s;
+    }
+
+    .modal-overlay.open {
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    .modal {
+      background: var(--white);
+      border-radius: var(--radius-lg);
+      width: 100%;
+      max-width: 720px;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: var(--shadow-lg);
+      transform: translateY(20px);
+      transition: transform 0.2s;
+    }
+
+    .modal-overlay.open .modal {
+      transform: translateY(0);
+    }
+
+    .modal-header {
+      padding: 20px 24px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      background: white;
+      z-index: 1;
+    }
+
+    .modal-header h3 {
+      font-family: 'Playfair Display', serif;
+      font-size: 18px;
+      color: var(--navy);
+    }
+
+    .modal-header p {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .modal-close {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--text-muted);
+      padding: 4px;
+      border-radius: 4px;
+    }
+
+    .modal-close:hover {
+      background: var(--snow);
+      color: var(--text);
+    }
+
+    .modal-body {
+      padding: 24px;
+    }
+
+    .modal-footer {
+      padding: 16px 24px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+    }
+
+    /* ── FORM ── */
+    .form-section {
+      margin-bottom: 20px;
+    }
+
+    .form-section-title {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: var(--teal);
+      margin-bottom: 12px;
+      padding-bottom: 6px;
+      border-bottom: 1px solid #E6F4F4;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+
+    .form-grid.cols-3 {
+      grid-template-columns: 1fr 1fr 1fr;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .form-group.full {
+      grid-column: 1 / -1;
+    }
+
+    .form-group label {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--slate);
+      letter-spacing: 0.2px;
+    }
+
+    .form-group label .req {
+      color: var(--danger);
+    }
+
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+      padding: 9px 12px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      font-size: 13px;
+      font-family: 'Inter', sans-serif;
+      color: var(--text);
+      background: var(--white);
+      transition: border-color 0.15s, box-shadow 0.15s;
+      outline: none;
+    }
+
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus {
+      border-color: var(--teal);
+      box-shadow: 0 0 0 3px rgba(13, 127, 127, 0.1);
+    }
+
+    .form-group textarea {
+      resize: vertical;
+      min-height: 72px;
+    }
+
+    .form-group select {
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%234A5568' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 10px center;
+      padding-right: 30px;
+    }
+
+    /* ── TABLE ── */
+    .table-card {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-sm);
+      overflow: hidden;
+    }
+
+    .table-toolbar {
+      padding: 16px 20px;
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .search-input {
+      flex: 1;
+      max-width: 280px;
+      padding: 8px 12px 8px 34px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      font-size: 13px;
+      font-family: 'Inter', sans-serif;
+      background: var(--snow) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23718096' stroke-width='2'%3E%3Ccircle cx='11' cy='11' r='8'%3E%3C/circle%3E%3Cline x1='21' y1='21' x2='16.65' y2='16.65'%3E%3C/line%3E%3C/svg%3E") no-repeat 10px center;
+      outline: none;
+    }
+
+    .search-input:focus {
+      border-color: var(--teal);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    thead tr {
+      background: var(--snow);
+    }
+
+    th {
+      padding: 10px 16px;
+      text-align: left;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      white-space: nowrap;
+    }
+
+    td {
+      padding: 13px 16px;
+      border-top: 1px solid var(--border);
+      font-size: 13px;
+      vertical-align: middle;
+    }
+
+    tbody tr:hover {
+      background: #FAFBFF;
+    }
+
+    .patient-name {
+      font-weight: 600;
+      color: var(--navy);
+    }
+
+    .patient-id {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    /* ── BADGES ── */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 3px 9px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.3px;
+    }
+
+    .badge-admitted {
+      background: #EBF8F0;
+      color: #276749;
+    }
+
+    .badge-discharged {
+      background: #F0F4FF;
+      color: #3B4FA6;
+    }
+
+    .badge-male {
+      background: #EBF4FF;
+      color: #1A5276;
+    }
+
+    .badge-female {
+      background: #FEF0F5;
+      color: #7B1E4A;
+    }
+
+    .badge-other {
+      background: #F5F0FF;
+      color: #4A2080;
+    }
+
+    .actions-cell {
+      display: flex;
+      gap: 6px;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 48px 20px;
+      color: var(--text-muted);
+    }
+
+    .empty-state svg {
+      width: 48px;
+      height: 48px;
+      margin: 0 auto 12px;
+      opacity: .3;
+      display: block;
+    }
+
+    .empty-state p {
+      font-size: 14px;
+    }
+
+    /* ── TOAST ── */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: var(--navy);
+      color: white;
+      padding: 12px 18px;
+      border-radius: var(--radius);
+      font-size: 13px;
+      font-weight: 500;
+      box-shadow: var(--shadow-lg);
+      z-index: 999;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transform: translateY(80px);
+      opacity: 0;
+      transition: all 0.25s;
+    }
+
+    .toast.show {
+      transform: translateY(0);
+      opacity: 1;
+    }
+
+    .toast.success {
+      border-left: 4px solid #48BB78;
+    }
+
+    .toast.error {
+      border-left: 4px solid var(--danger);
+    }
+
+    /* ── DOCTOR CARDS ── */
+    .doctor-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin-top: 20px;
+    }
+
+    .doctor-card {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 18px;
+      box-shadow: var(--shadow-sm);
+      display: flex;
+      gap: 14px;
+      align-items: flex-start;
+    }
+
+    .doc-avatar {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: var(--navy);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 15px;
+      flex-shrink: 0;
+    }
+
+    .doc-info .name {
+      font-weight: 600;
+      color: var(--navy);
+      font-size: 14px;
+    }
+
+    .doc-info .spec {
+      font-size: 12px;
+      color: var(--teal);
+      font-weight: 500;
+      margin: 2px 0 6px;
+    }
+
+    .doc-info .contact {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    /* Responsive */
+    @media (max-width: 900px) {
+      .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .doctor-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .form-grid.cols-3 {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: var(--snow);
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: var(--silver);
+      border-radius: 3px;
+    }
+
+    /* ── BILLING TYPE TOGGLE ── */
+    .type-toggle {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+
+    .type-toggle button {
+      flex: 1;
+      padding: 12px;
+      border-radius: var(--radius);
+      border: 1.5px solid var(--border);
+      background: var(--white);
+      font-weight: 700;
+      font-size: 13px;
+      letter-spacing: .5px;
+      color: var(--slate);
+      cursor: pointer;
+      transition: all .15s;
+    }
+
+    .type-toggle button.active {
+      border-color: var(--teal);
+      background: #EBF8F8;
+      color: var(--teal);
+    }
+
+    /* ── ITEMS TABLE (bill builder) ── */
+    .items-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 8px;
+    }
+
+    .items-table th {
+      text-align: left;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: .6px;
+      color: var(--text-muted);
+      padding: 6px 8px;
+    }
+
+    .items-table td {
+      padding: 5px 8px;
+    }
+
+    .items-table input[type=text] {
+      width: 100%;
+      padding: 8px 10px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 13px;
+      font-family: inherit;
+    }
+
+    .items-table input[type=number] {
+      width: 120px;
+      padding: 8px 10px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 13px;
+      font-family: inherit;
+      text-align: right;
+    }
+
+    .items-table .rm-item {
+      background: none;
+      border: none;
+      color: var(--danger);
+      cursor: pointer;
+      font-size: 18px;
+      line-height: 1;
+      padding: 4px 8px;
+    }
+
+    .items-total-row {
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      gap: 12px;
+      margin-top: 14px;
+      padding-top: 14px;
+      border-top: 2px solid var(--navy);
+    }
+
+    .items-total-row .label {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--slate);
+      text-transform: uppercase;
+      letter-spacing: .5px;
+    }
+
+    .items-total-row .amount {
+      font-size: 26px;
+      font-weight: 700;
+      font-family: 'Playfair Display', serif;
+      color: var(--navy);
+    }
+
+    /* ── PAYMENT MODE ── */
+    .pay-toggle {
+      display: flex;
+      gap: 10px;
+    }
+
+    .pay-toggle label {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 10px;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius);
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--slate);
+      transition: all .15s;
+    }
+
+    .pay-toggle input {
+      accent-color: var(--teal);
+    }
+
+    .pay-toggle label.checked {
+      border-color: var(--teal);
+      background: #EBF8F8;
+      color: var(--teal);
+    }
+
+    /* ── BILL RECORDS TOOLBAR ── */
+    .filter-bar {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .filter-bar input,
+    .filter-bar select {
+      padding: 8px 12px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      font-size: 13px;
+      font-family: 'Inter', sans-serif;
+      background: var(--white);
+    }
+
+    /* ── SETTINGS ── */
+    .settings-card {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-sm);
+      padding: 24px;
+      max-width: 620px;
+    }
+
+    .logo-upload {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 18px;
+    }
+
+    .logo-preview {
+      width: 72px;
+      height: 72px;
+      border-radius: 10px;
+      border: 1.5px dashed var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      background: var(--snow);
+      flex-shrink: 0;
+    }
+
+    .logo-preview img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+
+    /* ── SONOGRAPHY CHECKBOX GRID ── */
+    .indication-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px 16px;
+      max-height: 220px;
+      overflow-y: auto;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 12px;
+      background: var(--snow);
+    }
+
+    .indication-grid label {
+      display: flex;
+      align-items: flex-start;
+      gap: 7px;
+      font-size: 12.5px;
+      color: var(--text);
+      cursor: pointer;
+    }
+
+    .indication-grid input {
+      margin-top: 2px;
+      accent-color: var(--teal);
+    }
+
+    /* ── RECEIPT PREVIEW MODAL (on-screen + print target) ── */
+    .receipt-modal .modal {
+      max-width: 780px;
+    }
+
+    #receipt-frame-wrap {
+      background: #E9ECF2;
+      padding: 24px;
+    }
+
+    #receipt-doc {
+      background: white;
+      width: 700px;
+      margin: 0 auto;
+      padding: 36px 40px;
+      font-family: 'Inter', sans-serif;
+      color: #111;
+      box-shadow: 0 2px 12px rgba(0, 0, 0, .15);
+    }
+
+    #receipt-doc .r-head {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      border-bottom: 3px solid var(--navy);
+      padding-bottom: 14px;
+      margin-bottom: 14px;
+    }
+
+    #receipt-doc .r-logo {
+      width: 56px;
+      height: 56px;
+      border-radius: 8px;
+      background: var(--teal);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      overflow: hidden;
+    }
+
+    #receipt-doc .r-logo img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+
+    #receipt-doc .r-logo svg {
+      width: 30px;
+      height: 30px;
+      fill: white;
+    }
+
+    #receipt-doc .r-hname {
+      font-family: 'Playfair Display', serif;
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--navy);
+    }
+
+    #receipt-doc .r-htag {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    #receipt-doc .r-hmeta {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    #receipt-doc .r-type {
+      margin-left: auto;
+      text-align: right;
+    }
+
+    #receipt-doc .r-type .badge-type {
+      display: inline-block;
+      padding: 4px 14px;
+      border-radius: 20px;
+      background: var(--navy);
+      color: white;
+      font-weight: 700;
+      font-size: 12px;
+      letter-spacing: 1px;
+    }
+
+    #receipt-doc .r-billmeta {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12.5px;
+      margin-bottom: 12px;
+      color: var(--slate);
+    }
+
+    #receipt-doc .r-patient {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4px 24px;
+      font-size: 12.5px;
+      margin-bottom: 16px;
+      padding: 12px;
+      background: var(--snow);
+      border-radius: 6px;
+    }
+
+    #receipt-doc .r-patient div b {
+      color: var(--navy);
+    }
+
+    #receipt-doc table.r-items {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 6px;
+    }
+
+    #receipt-doc table.r-items th {
+      background: var(--navy);
+      color: white;
+      text-align: left;
+      font-size: 11px;
+      text-transform: uppercase;
+      padding: 8px 10px;
+    }
+
+    #receipt-doc table.r-items td {
+      padding: 7px 10px;
+      border-bottom: 1px solid var(--border);
+      font-size: 13px;
+    }
+
+    #receipt-doc table.r-items td.amt,
+    #receipt-doc table.r-items th.amt {
+      text-align: right;
+    }
+
+    #receipt-doc .r-total {
+      display: flex;
+      justify-content: flex-end;
+      gap: 16px;
+      padding: 12px 10px;
+      border-top: 2px solid var(--navy);
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--navy);
+    }
+
+    #receipt-doc .r-pay {
+      font-size: 12px;
+      color: var(--slate);
+      margin-top: 6px;
+    }
+
+    #receipt-doc .r-foot {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 46px;
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    #receipt-doc .r-sign {
+      text-align: center;
+      padding-top: 28px;
+      border-top: 1px solid var(--slate);
+      width: 180px;
+    }
+
+    @media print {
+      body * {
+        visibility: hidden;
+      }
+
+      #receipt-doc,
+      #receipt-doc * {
+        visibility: visible;
+      }
+
+      #receipt-doc {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        box-shadow: none;
+        margin: 0;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <header>
+    <div class="logo">
+      <div class="logo-icon" id="hdr-logo">
+        <img src="logo.jpg" style="width:100%;height:100%;object-fit:contain;border-radius:8px" />
+      </div>
+      <div class="logo-text">
+        <h1 id="hdr-hname">Male Hospital</h1>
+        <span id="hdr-htag">Hospital Management System</span>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="clock">
+        <strong id="hdr-time">--:--:--</strong>
+        <span id="hdr-date">Loading...</span>
+      </div>
+    </div>
+  </header>
+
+  <div class="main-container">
+    <!-- SIDEBAR -->
+    <nav class="sidebar">
+      <div class="sidebar-label">Navigation</div>
+      <div class="nav-item active" data-nav="dashboard" onclick="showSection('dashboard')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="3" width="7" height="7" />
+          <rect x="14" y="3" width="7" height="7" />
+          <rect x="14" y="14" width="7" height="7" />
+          <rect x="3" y="14" width="7" height="7" />
+        </svg>
+        Dashboard
+      </div>
+      <div class="nav-item" data-nav="patients" onclick="showSection('patients')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
+          <circle cx="9" cy="7" r="4" />
+          <path d="M23 21v-2a4 4 0 00-3-3.87" />
+          <path d="M16 3.13a4 4 0 010 7.75" />
+        </svg>
+        Patient Records
+      </div>
+      <div class="nav-item" data-nav="billing" onclick="showSection('billing')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="2" y="5" width="20" height="14" rx="2" />
+          <line x1="2" y1="10" x2="22" y2="10" />
+        </svg>
+        Billing
+      </div>
+      <div class="nav-item" data-nav="sonography" onclick="showSection('sonography')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="9" />
+          <path d="M12 7v5l3 3" />
+        </svg>
+        Sonography
+      </div>
+      <div class="nav-item" data-nav="doctors" onclick="showSection('doctors')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 2a5 5 0 100 10A5 5 0 0012 2z" />
+          <path d="M12 14c-5 0-9 2-9 4.5V21h18v-2.5c0-2.5-4-4.5-9-4.5z" />
+        </svg>
+        Doctors
+      </div>
+      <div class="nav-item" data-nav="settings" onclick="showSection('settings')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="3" />
+          <path
+            d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06A1.65 1.65 0 004.6 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06A1.65 1.65 0 009 4.6a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09A1.65 1.65 0 0015 4.6a1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z" />
+        </svg>
+        Settings
+      </div>
+      <div class="sidebar-divider"></div>
+      <div class="sidebar-label">Quick Add</div>
+      <div class="nav-item" onclick="showSection('patients'); setTimeout(()=>openOutpatientModal(),100)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="12" y1="5" x2="12" y2="19" />
+          <line x1="5" y1="12" x2="19" y2="12" />
+        </svg>
+        New OPD
+      </div>
+      <div class="nav-item" onclick="showSection('patients'); setTimeout(()=>openInpatientModal(),100)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="12" y1="5" x2="12" y2="19" />
+          <line x1="5" y1="12" x2="19" y2="12" />
+        </svg>
+        New IPD
+      </div>
+      <div class="nav-item" onclick="showSection('sonography'); setTimeout(()=>switchSonoTab('new'),100)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="12" y1="5" x2="12" y2="19" />
+          <line x1="5" y1="12" x2="19" y2="12" />
+        </svg>
+        New Sonography
+      </div>
+    </nav>
+
+
+    <!-- MAIN CONTENT -->
+    <main class="content">
+
+      <!-- ═══ DASHBOARD ═══ -->
+      <div id="section-dashboard" class="section-pane">
+        <div class="page-title">
+          <div>
+            <h2>Dashboard Overview</h2>
+            <p>Real-time summary of hospital operations</p>
+          </div>
+        </div>
+        <div class="stats-grid">
+          <div class="stat-card teal">
+            <div class="label">Outpatient Visits</div>
+            <div class="value" id="stat-out">—</div>
+            <div class="sub">Total visits recorded</div>
+          </div>
+          <div class="stat-card">
+            <div class="label">Total Admissions</div>
+            <div class="value" id="stat-in">—</div>
+            <div class="sub">All inpatient records</div>
+          </div>
+          <div class="stat-card warn">
+            <div class="label">Currently Admitted</div>
+            <div class="value" id="stat-admitted">—</div>
+            <div class="sub">Active inpatients</div>
+          </div>
+          <div class="stat-card">
+            <div class="label">Registered Doctors</div>
+            <div class="value" id="stat-docs">—</div>
+            <div class="sub">Active physicians</div>
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+          <div class="table-card">
+            <div
+              style="padding:16px 20px;border-bottom:1px solid var(--border);font-weight:600;color:var(--navy);font-size:14px">
+              Recent Outpatient Visits
+            </div>
+            <table>
+              <thead>
+                <tr>
+                  <th>Patient</th>
+                  <th>Doctor</th>
+                  <th>Date & Time</th>
+                </tr>
+              </thead>
+              <tbody id="dash-out-tbody">
+                <tr>
+                  <td colspan="3" class="empty-state">
+                    <p>Loading...</p>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="table-card">
+            <div
+              style="padding:16px 20px;border-bottom:1px solid var(--border);font-weight:600;color:var(--navy);font-size:14px">
+              Currently Admitted Patients
+            </div>
+            <table>
+              <thead>
+                <tr>
+                  <th>Patient</th>
+                  <th>Ward / Bed</th>
+                  <th>Admitted</th>
+                </tr>
+              </thead>
+              <tbody id="dash-in-tbody">
+                <tr>
+                  <td colspan="3" class="empty-state">
+                    <p>Loading...</p>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ PATIENT RECORDS ═══ -->
+      <div id="section-patients" class="section-pane" style="display:none">
+        <div class="page-title">
+          <div>
+            <h2>Patient Records</h2>
+            <p>Manage outpatient visits and indoor admissions</p>
+          </div>
+        </div>
+
+        <div class="tab-header">
+          <button class="tab-btn active" onclick="switchTab('outpatient')" id="tab-out-btn">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path
+                d="M16 11c1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3 1.34 3 3 3zm-8 0c1.66 0 3-1.34 3-3S9.66 5 8 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5z" />
+            </svg>
+            OPD
+            <span class="tab-count" id="tab-out-count">0</span>
+          </button>
+          <button class="tab-btn" onclick="switchTab('inpatient')" id="tab-in-btn">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path
+                d="M19 3H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2V5a2 2 0 00-2-2zm-7 3v3H9v2h3v3h2v-3h3v-2h-3V6h-2z" />
+            </svg>
+            IPD
+            <span class="tab-count" id="tab-in-count">0</span>
+          </button>
+        </div>
+
+        <!-- OUTPATIENT TAB -->
+        <div class="tab-pane active" id="pane-outpatient">
+          <div class="table-card">
+            <div class="table-toolbar">
+              <input class="search-input" type="text" placeholder="Search patients, doctors…"
+                oninput="filterOutpatients(this.value)" />
+              <div style="flex:1"></div>
+              <button class="btn btn-primary" onclick="openOutpatientModal()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <line x1="12" y1="5" x2="12" y2="19" />
+                  <line x1="5" y1="12" x2="19" y2="12" />
+                </svg>
+                Register Visit
+              </button>
+            </div>
+            <table>
+              <thead>
+                <tr>
+                  <th>Patient</th>
+                  <th>Age / Gender</th>
+                  <th>Consulting Doctor</th>
+                  <th>Symptoms / Diagnosis</th>
+                  <th>Visit Date & Time</th>
+                  <th>Follow-up</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="out-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- INPATIENT TAB -->
+        <div class="tab-pane" id="pane-inpatient">
+          <div class="table-card">
+            <div class="table-toolbar">
+              <input class="search-input" type="text" placeholder="Search patients, ward…"
+                oninput="filterInpatients(this.value)" />
+              <div style="flex:1"></div>
+              <button class="btn btn-primary" onclick="openInpatientModal()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <line x1="12" y1="5" x2="12" y2="19" />
+                  <line x1="5" y1="12" x2="19" y2="12" />
+                </svg>
+                Admit Patient
+              </button>
+            </div>
+            <table>
+              <thead>
+                <tr>
+                  <th>Patient</th>
+                  <th>Age / Gender</th>
+                  <th>Doctor</th>
+                  <th>Ward / Bed</th>
+                  <th>Diagnosis</th>
+                  <th>Admission</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="in-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ BILLING ═══ -->
+      <div id="section-billing" class="section-pane" style="display:none">
+        <div class="page-title">
+          <div>
+            <h2>Billing</h2>
+            <p>Generate and search OPD / IPD bills and receipts</p>
+          </div>
+        </div>
+
+        <div class="tab-header">
+          <button class="tab-btn active" onclick="switchBillingTab('new')" id="tab-billnew-btn">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="12" y1="5" x2="12" y2="19" />
+              <line x1="5" y1="12" x2="19" y2="12" />
+            </svg>
+            New Bill
+          </button>
+          <button class="tab-btn" onclick="switchBillingTab('records')" id="tab-billrec-btn">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="2" y="5" width="20" height="14" rx="2" />
+              <line x1="2" y1="10" x2="22" y2="10" />
+            </svg>
+            Bill Records
+            <span class="tab-count" id="tab-bill-count">0</span>
+          </button>
+        </div>
+
+        <!-- NEW BILL -->
+        <div class="tab-pane active" id="pane-billnew">
+          <div class="type-toggle">
+            <button id="bt-opd" class="active" onclick="setBillType('OPD')">OPD — Outdoor Patient Department</button>
+            <button id="bt-ipd" onclick="setBillType('IPD')">IPD — Indoor Patient Department</button>
+          </div>
+
+          <div class="form-section">
+            <div class="form-section-title">Patient Information</div>
+            <div class="form-grid cols-3">
+              <div class="form-group full">
+                <label>Patient's Name <span class="req">*</span></label>
+                <input type="text" id="bill-name" placeholder="Patient's full name" />
+              </div>
+              <div class="form-group">
+                <label>Age</label>
+                <input type="text" id="bill-age" placeholder="e.g. 34 Yrs" />
+              </div>
+              <div class="form-group">
+                <label>Gender</label>
+                <select id="bill-gender">
+                  <option value="">Select gender</option>
+                  <option>Male</option>
+                  <option>Female</option>
+                  <option>Other</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Phone</label>
+                <input type="tel" id="bill-phone" placeholder="Contact number" />
+              </div>
+              <div class="form-group full">
+                <label>Address</label>
+                <input type="text" id="bill-address" placeholder="Patient's address" />
+              </div>
+            </div>
+          </div>
+
+          <div class="form-section">
+            <div class="form-section-title">Bill Details</div>
+            <div class="form-grid cols-3">
+              <div class="form-group">
+                <label>Bill Date <span class="req">*</span></label>
+                <input type="date" id="bill-date" />
+              </div>
+              <div class="form-group" id="bill-indoor-wrap" style="display:none">
+                <label>Indoor No.</label>
+                <input type="text" id="bill-indoor" placeholder="Indoor No." />
+              </div>
+              <div class="form-group">
+                <label>Consultant Doctor <span class="req">*</span></label>
+                <select id="bill-doctor"></select>
+              </div>
+              <div class="form-group" id="bill-admdate-wrap" style="display:none">
+                <label>Date of Admission</label>
+                <input type="date" id="bill-admdate" />
+              </div>
+              <div class="form-group" id="bill-disdate-wrap" style="display:none">
+                <label>D.O. Discharge</label>
+                <input type="date" id="bill-disdate" />
+              </div>
+              <div class="form-group full">
+                <label>Diagnostic / Notes</label>
+                <input type="text" id="bill-diagnostic" placeholder="Diagnostic notes" />
+              </div>
+            </div>
+          </div>
+
+          <div class="form-section">
+            <div class="form-section-title">Charges</div>
+            <table class="items-table">
+              <thead>
+                <tr>
+                  <th style="width:40px">S.No</th>
+                  <th>Description</th>
+                  <th style="width:130px">Amount (₹)</th>
+                  <th style="width:36px"></th>
+                </tr>
+              </thead>
+              <tbody id="bill-items-tbody"></tbody>
+            </table>
+            <button class="btn btn-secondary btn-sm" style="margin-top:10px" onclick="addBillItem('','')">+ Add
+              Item</button>
+            <div class="items-total-row">
+              <span class="label">Total</span>
+              <span class="amount" id="bill-total">₹0</span>
+            </div>
+          </div>
+
+          <div class="form-section">
+            <div class="form-section-title">Payment</div>
+            <div class="pay-toggle">
+              <label id="pay-cash-label" class="checked">
+                <input type="radio" name="paymode" value="cash" checked onchange="setPayMode('cash')" /> Cash
+              </label>
+              <label id="pay-online-label">
+                <input type="radio" name="paymode" value="online" onchange="setPayMode('online')" /> Paid Online
+              </label>
+            </div>
+            <div class="form-group" id="utr-wrap" style="display:none;margin-top:12px;max-width:320px">
+              <label>UTR / Transaction Code <span class="req">*</span></label>
+              <input type="text" id="bill-utr" placeholder="Enter UTR code to verify payment" />
+            </div>
+          </div>
+
+          <div class="modal-footer" style="border-top:1px solid var(--border);padding:16px 0">
+            <button class="btn btn-secondary" onclick="resetBillForm()">Reset</button>
+            <button class="btn btn-primary" onclick="saveBill(true)">Save &amp; Print Bill</button>
+          </div>
+        </div>
+
+        <!-- BILL RECORDS -->
+        <div class="tab-pane" id="pane-billrecords">
+          <div class="table-card">
+            <div class="table-toolbar filter-bar">
+              <input class="search-input" type="text" placeholder="Search patient or bill no…"
+                oninput="filterBills({search:this.value})" />
+              <select onchange="filterBills({type:this.value})">
+                <option value="">All Types</option>
+                <option value="OPD">OPD</option>
+                <option value="IPD">IPD</option>
+              </select>
+              <select id="bill-filter-doctor" onchange="filterBills({doctor_id:this.value})">
+                <option value="">All Doctors</option>
+              </select>
+              <label style="font-size:12px;color:var(--text-muted)">From <input type="date"
+                  onchange="filterBills({date_from:this.value})" /></label>
+              <label style="font-size:12px;color:var(--text-muted)">To <input type="date"
+                  onchange="filterBills({date_to:this.value})" /></label>
+            </div>
+            <table>
+              <thead>
+                <tr>
+                  <th>Bill No</th>
+                  <th>Type</th>
+                  <th>Patient</th>
+                  <th>Doctor</th>
+                  <th>Date</th>
+                  <th>Amount</th>
+                  <th>Payment</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="bill-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ SONOGRAPHY ═══ -->
+      <div id="section-sonography" class="section-pane" style="display:none">
+        <div class="page-title">
+          <div>
+            <h2>Sonography — Form F</h2>
+            <p>Prenatal diagnostic procedure record (PC&amp;PNDT Act, 1994)</p>
+          </div>
+        </div>
+
+        <div class="tab-header">
+          <button class="tab-btn active" onclick="switchSonoTab('new')" id="tab-sononew-btn">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="12" y1="5" x2="12" y2="19" />
+              <line x1="5" y1="12" x2="19" y2="12" />
+            </svg>
+            New Entry
+          </button>
+          <button class="tab-btn" onclick="switchSonoTab('records')" id="tab-sonorec-btn">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="9" />
+              <path d="M12 7v5l3 3" />
+            </svg>
+            Records
+            <span class="tab-count" id="tab-sono-count">0</span>
+          </button>
+        </div>
+
+        <div class="tab-pane active" id="pane-sononew">
+          <!-- ===== OFFICIAL FORM F — Filled by RMD ===== -->
+
+          <!-- SECTION A -->
+          <div class="form-section">
+            <div class="form-section-title">Section A: To be filled in for all Diagnostic Procedures/Tests</div>
+
+            <!-- Fields 1 & 2 (auto from settings) -->
+            <div class="form-grid" style="margin-bottom:10px">
+              <div class="form-group full">
+                <label>1. Name and Complete Address of Genetic/Ultrasound Clinic/Imaging Centre</label>
+                <input type="text" id="sono-clinic-name" placeholder="Hospital name — auto-filled from Settings" readonly style="background:#f0f0f0;color:var(--text-muted);font-weight:600" />
+                <input type="text" id="sono-clinic-address" placeholder="Address — auto-filled from Settings" readonly style="background:#f0f0f0;color:var(--text-muted);margin-top:4px" />
+              </div>
+              <div class="form-group">
+                <label>2. Registration No. (Under PC&amp;PNDT Act, 1994) &mdash; T.M.C/P.C.P.N.D.T.-</label>
+                <input type="text" id="sono-reg-no" placeholder="Auto-filled from Settings" readonly style="background:#f0f0f0;color:var(--text-muted)" />
+              </div>
+              <div class="form-group">
+                <label>Entry Date <span class="req">*</span></label>
+                <input type="date" id="sono-date" onchange="updateDeclarationDates()" />
+              </div>
+            </div>
+
+            <!-- Field 3 -->
+            <div class="form-grid cols-3">
+              <div class="form-group" style="grid-column:span 2">
+                <label>3. Patient's Name <span class="req">*</span></label>
+                <input type="text" id="sono-name" placeholder="Patient's full name" oninput="updateDeclarationNames()" />
+              </div>
+              <div class="form-group">
+                <label>Age</label>
+                <input type="text" id="sono-age" placeholder="Years" />
+              </div>
+            </div>
+
+            <!-- Field 4 -->
+            <div class="form-grid cols-3" style="margin-top:10px">
+              <div class="form-group full">
+                <label style="font-weight:600">4. Total Number of Living Children</label>
+              </div>
+              <div class="form-group">
+                <label>&nbsp;&nbsp;&nbsp;(a) No. of Living Sons</label>
+                <input type="number" id="sono-sons" placeholder="Count" min="0" />
+              </div>
+              <div class="form-group" style="grid-column:span 2">
+                <label>Age of each living son (in years or months)</label>
+                <input type="text" id="sono-sons-ages" placeholder="e.g. 5 yrs, 2 yrs" />
+              </div>
+              <div class="form-group">
+                <label>&nbsp;&nbsp;&nbsp;(b) No. of Living Daughters</label>
+                <input type="number" id="sono-daughters" placeholder="Count" min="0" />
+              </div>
+              <div class="form-group" style="grid-column:span 2">
+                <label>Age of each living daughter (in years or months)</label>
+                <input type="text" id="sono-daughters-ages" placeholder="e.g. 3 yrs, 6 months" />
+              </div>
+            </div>
+
+            <!-- Field 5 -->
+            <div class="form-grid" style="margin-top:10px">
+              <div class="form-group full">
+                <label>5. Husband's / Wife's / Father's / Mother's Name</label>
+                <input type="text" id="sono-husband" placeholder="Name of Husband / Wife / Father / Mother" />
+              </div>
+            </div>
+
+            <!-- Field 6 -->
+            <div class="form-grid cols-3" style="margin-top:10px">
+              <div class="form-group" style="grid-column:span 2">
+                <label>6. Full Postal Address of the Patient</label>
+                <input type="text" id="sono-address" placeholder="Full postal address" />
+              </div>
+              <div class="form-group">
+                <label>Contact Number (if any)</label>
+                <input type="tel" id="sono-contact" placeholder="Contact number" />
+              </div>
+            </div>
+
+            <!-- Field 7 -->
+            <div class="form-grid" style="margin-top:10px">
+              <div class="form-group">
+                <label>7. Referral Type</label>
+                <select id="sono-ref-type" onchange="toggleReferralType(this.value)">
+                  <option value="referred">7(a) Referred by Doctor / Genetic Counseling Centre</option>
+                  <option value="self">7(b) Self-Referral (Gynaecologist/Radiologist/RMP)</option>
+                </select>
+              </div>
+              <div class="form-group" id="sono-ref-doc-wrap">
+                <label>7(a) Referred By (Full Name &amp; Address of Doctor/Genetic Counseling Centre)</label>
+                <select id="sono-referred">
+                  <option value="">Select referral doctor</option>
+                  <option value="Self / Walk-in">Self / Walk-in</option>
+                </select>
+                <small style="color:var(--text-muted);font-size:11px">(Referral slips to be preserved carefully with Form F)</small>
+              </div>
+              <div class="form-group" id="sono-self-ref-wrap" style="display:none">
+                <label>7(b) Self-Referral Note &mdash; Gynaecologist/Radiologist/Registered Medical Practitioner conducting the diagnostic procedure</label>
+                <input type="text" id="sono-self-ref-details" placeholder="Doctor name / indications / case paper details" />
+                <small style="color:var(--text-muted);font-size:11px">(Referral note with indications and case papers to be preserved with Form F)</small>
+              </div>
+            </div>
+
+            <!-- Field 8 -->
+            <div class="form-grid cols-3" style="margin-top:10px">
+              <div class="form-group">
+                <label>8. Last Menstrual Period (LMP)</label>
+                <input type="date" id="sono-lmp" />
+              </div>
+              <div class="form-group">
+                <label>Or Weeks of Pregnancy</label>
+                <input type="text" id="sono-weeks" placeholder="e.g. 12 weeks" />
+              </div>
+            </div>
+          </div>
+
+          <!-- SECTION B -->
+          <div class="form-section">
+            <div class="form-section-title">Section B: To be filled for performing Non-Invasive Diagnostic Procedures/Tests only</div>
+
+            <!-- Field 9 -->
+            <div class="form-grid cols-3">
+              <div class="form-group" style="grid-column:span 2">
+                <label>9. Name of the Doctor Performing the Procedure/s <span class="req">*</span></label>
+                <select id="sono-doctor" onchange="updateDeclarationDoctor()"></select>
+              </div>
+            </div>
+
+            <!-- Field 10 (Indications — existing, unchanged) -->
+            <div class="form-section" style="margin-top:10px">
+              <div class="form-section-title" style="font-size:12px">10. Indication/s for Diagnosis Procedure
+                <span style="font-weight:normal; font-size:11px; color:var(--text-muted);">&nbsp;(Reference to the request made in the referral slip or in a self-referral note)</span>
+              </div>
+              <div style="font-size:11.5px;color:var(--slate);margin-bottom:8px;line-height:1.5;font-style:italic">
+                Ultrasonography prenatal diagnosis during pregnancy should only be performed when indicated. The following is the representative list of indications for ultrasound during pregnancy. (Put a &ldquo;Tick&rdquo; against the appropriate indication/s for ultrasound)
+              </div>
+              <div class="indication-grid" id="sono-indications"></div>
+            </div>
+
+            <!-- Field 11 -->
+            <div class="form-grid cols-3" style="margin-top:10px">
+              <div class="form-group" style="grid-column:span 2">
+                <label>11. Procedures Carried Out (Non-Invasive) &mdash; Put a &ldquo;Tick&rdquo; on the appropriate procedure</label>
+                <select id="sono-procedure" onchange="handleProcedureChange(this.value)">
+                  <option value="Ultrasound">I. Ultrasound</option>
+                  <option value="Other">Any Other (specify below)</option>
+                </select>
+                <small style="color:var(--text-muted);font-size:10.5px;margin-top:4px;display:block">(Important Note: Ultrasound is not indicated/advised/performed to determine the sex of foetus except for diagnosis of sex-linked diseases such as Duchenne Muscular Dystrophy, Hemophilia A&amp;B etc.)</small>
+              </div>
+              <div class="form-group">
+                <label>If Any Other (specify)</label>
+                <input type="text" id="sono-other-proc" placeholder="Specify other non-invasive procedure" />
+              </div>
+            </div>
+
+            <!-- Field 12 -->
+            <div class="form-grid cols-3" style="margin-top:10px">
+              <div class="form-group">
+                <label>12. Date on which Declaration of Pregnant Woman/Person was Obtained</label>
+                <input type="date" id="sono-decl-date" />
+              </div>
+              <!-- Field 13 -->
+              <div class="form-group">
+                <label>13. Date on which Procedures Carried Out</label>
+                <input type="date" id="sono-procdate" />
+              </div>
+            </div>
+
+            <!-- Field 14 -->
+            <div class="form-grid" style="margin-top:10px">
+              <div class="form-group full">
+                <label>14. Result of the Non-Invasive Procedure Carried Out (report in brief of the test including ultrasound carried out)</label>
+                <textarea id="sono-result" placeholder="Brief report of the test / ultrasound carried out" style="min-height:80px"></textarea>
+              </div>
+            </div>
+
+            <!-- Field 15 -->
+            <div class="form-grid cols-3" style="margin-top:10px">
+              <div class="form-group" style="grid-column:span 2">
+                <label>15. The Result of Pre-Natal Diagnostic Procedures was Conveyed to</label>
+                <input type="text" id="sono-conveyed-to" placeholder="e.g. Patient, Husband" />
+              </div>
+              <div class="form-group">
+                <label>on (Date)</label>
+                <input type="date" id="sono-conveyed-date" />
+              </div>
+            </div>
+
+            <!-- Field 16 -->
+            <div class="form-grid" style="margin-top:10px">
+              <div class="form-group full">
+                <label>16. Any Indication for MTP as per the Abnormality Detected in the Diagnostic Procedures/Tests</label>
+                <input type="text" id="sono-mtp-indication" placeholder="Indication for MTP (if none, leave blank)" />
+              </div>
+            </div>
+
+            <!-- Section B footer: Date / Place / Signature -->
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:16px; padding:12px; background:#f7f9fc; border-radius:6px; border:1px solid var(--border)">
+              <div style="font-size:13px; font-weight:600; color:var(--slate)">Dates:</div>
+              <div style="font-size:13px; font-weight:600; color:var(--slate)">Place: Thane</div>
+              <div style="font-size:12px; font-weight:700; color:var(--navy); border-top:2px solid var(--navy); padding-top:4px; text-align:center; min-width:220px">CONSULTING RADIOLOGIST &amp; SONOLOGIST</div>
+            </div>
+          </div>
+
+          <!-- SECTION C -->
+          <div class="form-section" style="background:#F7FAFC; border:1px dashed var(--border); padding:16px; border-radius:var(--radius-lg)">
+            <label style="display:flex; gap:10px; align-items:center; font-weight:700; color:var(--navy); cursor:pointer">
+              <input type="checkbox" id="sono-is-invasive" checked onchange="toggleInvasiveSection(this.checked)" style="width:16px; height:16px; accent-color:var(--teal)" />
+              Perform Invasive Procedure / Test (Section C)
+            </label>
+
+            <div id="sono-invasive-section" style="display:block; margin-top:20px">
+              <div class="form-section-title" style="color:var(--danger)">Section C: To be filled for performing Invasive Procedure / Test only</div>
+              <div class="form-grid cols-3">
+
+                <!-- Field 17 -->
+                <div class="form-group" style="grid-column:span 2">
+                  <label>17. Name of the Doctor/s Performing the Procedure/s</label>
+                  <input type="text" id="sono-inv-doctor" placeholder="Dr. Name" />
+                </div>
+
+                <!-- Field 18 -->
+                <div class="form-group full">
+                  <label>18. History of Genetic/Medical Disease in the Family (specify)</label>
+                  <input type="text" id="sono-inv-history" placeholder="Family genetic disease history" />
+                </div>
+                <div class="form-group full">
+                  <label>Basis of Diagnosis &mdash; &ldquo;Tick&rdquo; on appropriate basis of diagnosis</label>
+                  <div style="display:flex; gap:20px; flex-wrap:wrap; margin-top:6px">
+                    <label style="display:flex; align-items:center; gap:6px; font-weight:normal; font-size:13px"><input type="checkbox" id="sono-inv-basis-clinical" /> (a) Clinical</label>
+                    <label style="display:flex; align-items:center; gap:6px; font-weight:normal; font-size:13px"><input type="checkbox" id="sono-inv-basis-biochem" /> (b) Bio-chemical</label>
+                    <label style="display:flex; align-items:center; gap:6px; font-weight:normal; font-size:13px"><input type="checkbox" id="sono-inv-basis-cytogen" /> (c) Cytogenetic</label>
+                    <label style="display:flex; align-items:center; gap:6px; font-weight:normal; font-size:13px; flex-shrink:0"><input type="checkbox" id="sono-inv-basis-other" onchange="document.getElementById('sono-inv-basis-other-spec').style.display=this.checked?'inline-block':'none'" /> (d) Other (e.g. radiological, ultrasonography etc. specify):</label>
+                    <input type="text" id="sono-inv-basis-other-spec" placeholder="Specify basis" style="display:none; padding:4px 8px; font-size:12px; width:200px" />
+                  </div>
+                </div>
+
+                <!-- Field 19 -->
+                <div class="form-group full">
+                  <label>19. Indication/s for the Diagnosis Procedure &mdash; &ldquo;Tick&rdquo; on appropriate indication/s</label>
+                  <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-top:8px; background:#fff; padding:12px; border:1px solid var(--border); border-radius:6px; max-height:220px; overflow-y:auto">
+                    <div style="font-size:12px; font-weight:600; color:var(--navy); grid-column:1/-1">A. Previous child/children with:</div>
+                    <label style="font-weight:normal; font-size:12.5px"><input type="checkbox" id="sono-inv-ind-chrom" /> (i) Chromosomal disorders</label>
+                    <label style="font-weight:normal; font-size:12.5px"><input type="checkbox" id="sono-inv-ind-metab" /> (ii) Metabolic disorders</label>
+                    <label style="font-weight:normal; font-size:12.5px"><input type="checkbox" id="sono-inv-ind-congen" /> (iii) Congenital anomaly</label>
+                    <label style="font-weight:normal; font-size:12.5px"><input type="checkbox" id="sono-inv-ind-mental" /> (iv) Mental Disability</label>
+                    <label style="font-weight:normal; font-size:12.5px"><input type="checkbox" id="sono-inv-ind-haemo" /> (v) Haemoglobinopathy</label>
+                    <label style="font-weight:normal; font-size:12.5px"><input type="checkbox" id="sono-inv-ind-sexlink" /> (vi) Sex linked disorders</label>
+                    <label style="font-weight:normal; font-size:12.5px"><input type="checkbox" id="sono-inv-ind-singlegene" /> (vii) Single gene disorder</label>
+                    <label style="font-weight:normal; font-size:12.5px; display:flex; align-items:center; gap:6px"><input type="checkbox" id="sono-inv-ind-other" onchange="document.getElementById('sono-inv-ind-other-spec').style.display=this.checked?'inline-block':'none'" /> (viii) Any other (specify):</label>
+                    <input type="text" id="sono-inv-ind-other-spec" placeholder="Specify" style="display:none; padding:4px 8px; font-size:12px;" />
+
+                    <label style="font-weight:normal; font-size:12.5px"><input type="checkbox" id="sono-inv-ind-age" /> B. Advanced maternal age (35 years)</label>
+                    <label style="font-weight:normal; font-size:12.5px; display:flex; align-items:center; gap:6px"><input type="checkbox" id="sono-inv-ind-genetic" onchange="document.getElementById('sono-inv-ind-genetic-spec').style.display=this.checked?'inline-block':'none'" /> C. Mother/father/sibling has genetic disease (specify):</label>
+                    <input type="text" id="sono-inv-ind-genetic-spec" placeholder="Specify" style="display:none; padding:4px 8px; font-size:12px;" />
+                    <label style="font-weight:normal; font-size:12.5px; display:flex; align-items:center; gap:6px; grid-column: 1 / -1"><input type="checkbox" id="sono-inv-ind-other-diag" onchange="document.getElementById('sono-inv-ind-other-diag-spec').style.display=this.checked?'inline-block':'none'" /> D. Other (specify):</label>
+                    <input type="text" id="sono-inv-ind-other-diag-spec" placeholder="Specify" style="display:none; padding:4px 8px; font-size:12px; grid-column: 1 / -1" />
+                  </div>
+                </div>
+
+                <!-- Field 20 -->
+                <div class="form-group">
+                  <label>20. Date on which Consent of Pregnant Woman/Person was Obtained in Form G presented in PC&amp;PNDT Act, 1994</label>
+                  <input type="date" id="sono-inv-consent-date" />
+                </div>
+
+                <!-- Field 21 -->
+                <div class="form-group" style="grid-column: span 2">
+                  <label>21. Invasive Procedures Carried Out &mdash; &ldquo;Tick&rdquo; on appropriate indication/s</label>
+                  <div style="display:flex; gap:16px; flex-wrap:wrap; margin-top:6px">
+                    <label style="font-weight:normal; font-size:12.5px"><input type="checkbox" id="sono-inv-proc-amnio" /> i. Amniocentesis</label>
+                    <label style="font-weight:normal; font-size:12.5px"><input type="checkbox" id="sono-inv-proc-chorionic" /> ii. Chorionic Villi aspiration</label>
+                    <label style="font-weight:normal; font-size:12.5px"><input type="checkbox" id="sono-inv-proc-biopsy" /> iii. Fetal biopsy</label>
+                    <label style="font-weight:normal; font-size:12.5px"><input type="checkbox" id="sono-inv-proc-cordo" /> iv. Cordocentesis</label>
+                    <label style="font-weight:normal; font-size:12.5px; display:flex; align-items:center; gap:6px"><input type="checkbox" id="sono-inv-proc-other" onchange="document.getElementById('sono-inv-proc-other-spec').style.display=this.checked?'inline-block':'none'" /> v. Any other (specify):</label>
+                    <input type="text" id="sono-inv-proc-other-spec" placeholder="Specify" style="display:none; padding:4px 8px; font-size:12px;" />
+                  </div>
+                </div>
+
+                <!-- Field 22 -->
+                <div class="form-group full">
+                  <label>22. Any Complication/s of Invasive Procedure (specify)</label>
+                  <input type="text" id="sono-inv-complications" placeholder="Complications (if none, leave blank)" />
+                </div>
+
+                <!-- Field 23 -->
+                <div class="form-group full">
+                  <label>23. Additional Tests Recommended (Please mention if applicable)</label>
+                  <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:6px">
+                    <label style="font-weight:normal; font-size:12.5px"><input type="checkbox" id="sono-inv-test-chrom" /> (i) Chromosomal studies</label>
+                    <label style="font-weight:normal; font-size:12.5px"><input type="checkbox" id="sono-inv-test-biochem" /> (ii) Biochemical studies</label>
+                    <label style="font-weight:normal; font-size:12.5px"><input type="checkbox" id="sono-inv-test-molec" /> (iii) Molecular studies</label>
+                    <label style="font-weight:normal; font-size:12.5px"><input type="checkbox" id="sono-inv-test-gender" /> (iv) Pre-implantation gender diagnosis</label>
+                    <label style="font-weight:normal; font-size:12.5px; display:flex; align-items:center; gap:6px"><input type="checkbox" id="sono-inv-test-other" onchange="document.getElementById('sono-inv-test-other-spec').style.display=this.checked?'inline-block':'none'" /> (v) Any other (specify):</label>
+                    <input type="text" id="sono-inv-test-other-spec" placeholder="Specify" style="display:none; padding:4px 8px; font-size:12px;" />
+                  </div>
+                </div>
+
+                <!-- Field 24 -->
+                <div class="form-group full">
+                  <label>24. Result of the Procedure/Tests Carried Out (report in brief of the invasive tests/procedures carried out)</label>
+                  <textarea id="sono-inv-result" placeholder="Brief report of the invasive tests / procedures carried out"></textarea>
+                </div>
+
+                <!-- Field 25 -->
+                <div class="form-group">
+                  <label>25. Date on which Procedures Carried Out</label>
+                  <input type="date" id="sono-inv-procdate" />
+                </div>
+
+                <!-- Field 26 -->
+                <div class="form-group">
+                  <label>26. The Result of Pre-Natal Diagnostic Procedures was Conveyed to</label>
+                  <input type="text" id="sono-inv-conveyed-to" placeholder="e.g. Patient" />
+                </div>
+                <div class="form-group">
+                  <label>on (Date)</label>
+                  <input type="date" id="sono-inv-conveyed-date" />
+                </div>
+
+                <!-- Field 27 -->
+                <div class="form-group full">
+                  <label>27. Any Indication for MTP as per the Abnormality Detected in the Diagnostic Procedures/Tests</label>
+                  <input type="text" id="sono-inv-mtp-indication" placeholder="Indication for MTP (if none, leave blank)" />
+                </div>
+              </div>
+
+              <!-- Section C footer: Date / Place / Signature -->
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-top:16px; padding:12px; background:#f7f9fc; border-radius:6px; border:1px solid var(--border)">
+                <div style="font-size:13px; font-weight:600; color:var(--slate)">Date:</div>
+                <div style="font-size:13px; font-weight:600; color:var(--slate)">Place: Thane</div>
+                <div style="font-size:12px; font-weight:700; color:var(--navy); border-top:2px solid var(--navy); padding-top:4px; text-align:center; min-width:220px">CONSULTING RADIOLOGIST &amp; SONOLOGIST</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- SECTION D: Declarations -->
+          <div class="form-section" style="background:#EDF2F7; padding:20px; border-radius:var(--radius-lg); margin-top:20px">
+            <div class="form-section-title" style="color:var(--navy)">Section D: Declaration</div>
+
+            <!-- Declaration of Patient -->
+            <div style="background:#fff; border:1px solid var(--border); padding:16px; border-radius:6px; margin-bottom:16px;">
+              <h4 style="font-size:13px; font-weight:700; text-align:center; margin-bottom:8px; text-decoration:underline; color:var(--navy)">
+                DECLARATION OF THE PERSON UNDERGOING PRENATAL DIAGNOSTIC TEST / PROCEDURE
+              </h4>
+              <p style="font-size:13px; line-height:1.8; text-align:justify;">
+                I, Mrs./Mr. <b id="decl-patient-name-span">[Patient's Name]</b> declare that by undergoing Prenatal Diagnostic Test/Procedure, I do not want to know the sex of my foetus.
+              </p>
+              <div class="form-grid cols-3" style="margin-top:14px">
+                <div class="form-group">
+                  <label>Date</label>
+                  <input type="date" id="sono-decl-patient-date" />
+                </div>
+                <div class="form-group">
+                  <label>Declaration Mode</label>
+                  <select id="sono-decl-mode" onchange="toggleAttesterSection(this.value)">
+                    <option value="signature">Signature of the Person Undergoing Prenatal Diagnostic Test/Procedure</option>
+                    <option value="thumb">Thumb Impression of the Person Undergoing Prenatal Diagnostic Test/Procedure</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <!-- Attester Section (thumb impression only) -->
+            <div id="sono-attester-section" style="display:none; border:1.5px dashed var(--silver); background:#fff; padding:16px; border-radius:6px; margin-bottom:16px">
+              <div class="form-section-title" style="font-size:11px; margin-bottom:8px">In Case of Thumb Impression</div>
+              <div class="form-grid cols-3">
+                <div class="form-group">
+                  <label>Identified (Name)</label>
+                  <input type="text" id="sono-decl-id-name" placeholder="Identifier's Name" />
+                </div>
+                <div class="form-group">
+                  <label>Age</label>
+                  <input type="number" id="sono-decl-id-age" placeholder="Years" min="0" />
+                </div>
+                <div class="form-group">
+                  <label>Sex</label>
+                  <select id="sono-decl-id-sex">
+                    <option value="">Select sex</option>
+                    <option>Male</option>
+                    <option>Female</option>
+                    <option>Other</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label>Relation (if any)</label>
+                  <input type="text" id="sono-decl-id-relation" placeholder="Relation to patient" />
+                </div>
+                <div class="form-group" style="grid-column: span 2">
+                  <label>Address &amp; Contact No.</label>
+                  <input type="text" id="sono-decl-id-address" placeholder="Address and phone number" />
+                </div>
+                <div class="form-group" style="grid-column: span 2">
+                  <label>Signature of Person Attesting Thumb Impression (Name)</label>
+                  <input type="text" id="sono-decl-attester-name" placeholder="Attester's Name" />
+                </div>
+                <div class="form-group">
+                  <label>Date</label>
+                  <input type="date" id="sono-decl-attester-date" />
+                </div>
+              </div>
+            </div>
+
+            <!-- Declaration of Doctor -->
+            <div style="background:#fff; border:1px solid var(--border); padding:16px; border-radius:6px;">
+              <h4 style="font-size:13px; font-weight:700; text-align:center; margin-bottom:8px; text-decoration:underline; color:var(--navy)">
+                DECLARATION OF DOCTOR / PERSON CONDUCTING PRENATAL DIAGNOSTIC PROCEDURE / TEST
+              </h4>
+              <p style="font-size:13px; line-height:1.8; text-align:justify;">
+                I, <b id="decl-doctor-name-span">[Doctor Name]</b> (name of the person conducting ultrasonography/image scanning) declare that while conducting ultrasonography/image scanning on Ms./Mr. <b id="decl-patient-name-span-2">[Patient's Name]</b> (name of the pregnant woman or the person undergoing prenatal diagnostic procedure/test), I have neither detected nor disclosed the sex of her fetus to anybody in any manner.
+              </p>
+              <div class="form-grid cols-3" style="margin-top:14px">
+                <div class="form-group">
+                  <label>Date</label>
+                  <input type="date" id="sono-decl-doc-date" />
+                </div>
+                <div class="form-group full" style="display:flex; align-items:flex-end; justify-content:flex-end">
+                  <div style="font-size:12px; font-weight:700; color:var(--navy); border-top:2px solid var(--navy); padding-top:4px; text-align:center; min-width:220px">
+                    Signature<br><span style="font-weight:400; font-size:11px">CONSULTING RADIOLOGIST &amp; SONOLOGIST</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="modal-footer" style="border-top:1px solid var(--border);padding:16px 0">
+            <button class="btn btn-secondary" onclick="resetSonoForm()">Reset</button>
+            <button class="btn btn-primary" onclick="saveSono(true)">Save &amp; Print Form F</button>
+          </div>
+        </div>
+
+                <div class="tab-pane" id="pane-sonorecords">
+          <div class="table-card">
+            <div class="table-toolbar filter-bar">
+              <input class="search-input" type="text" placeholder="Search patient or entry no…"
+                oninput="filterSono({search:this.value})" />
+              <label style="font-size:12px;color:var(--text-muted)">From <input type="date"
+                  onchange="filterSono({date_from:this.value})" /></label>
+              <label style="font-size:12px;color:var(--text-muted)">To <input type="date"
+                  onchange="filterSono({date_to:this.value})" /></label>
+            </div>
+            <table>
+              <thead>
+                <tr>
+                  <th>Entry No</th>
+                  <th>Patient</th>
+                  <th>Age</th>
+                  <th>Referred By</th>
+                  <th>Procedure</th>
+                  <th>Date</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="sono-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ DOCTORS ═══ -->
+      <div id="section-doctors" class="section-pane" style="display:none">
+        <div class="page-title">
+          <div>
+            <h2>Doctors & Referrals</h2>
+            <p>Manage hospital physicians and external referral doctors</p>
+          </div>
+          <div style="display:flex;gap:10px;">
+            <button class="btn btn-secondary" onclick="openReferralDoctorModal()">Add Referral Doctor</button>
+            <button class="btn btn-primary" onclick="openDoctorModal()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <line x1="12" y1="5" x2="12" y2="19" />
+                <line x1="5" y1="12" x2="19" y2="12" />
+              </svg>
+              Add Hospital Doctor
+            </button>
+          </div>
+        </div>
+        <div class="tab-header" style="margin-bottom:16px;">
+          <button class="tab-btn active" onclick="switchDocTab('hospital')" id="tab-doc-hosp">Hospital Doctors</button>
+          <button class="tab-btn" onclick="switchDocTab('referral')" id="tab-doc-ref">Referral Doctors</button>
+        </div>
+        <div class="doctor-grid" id="doctor-grid"></div>
+        <div class="doctor-grid" id="referral-doctor-grid" style="display:none;"></div>
+      </div>
+
+      <!-- ═══ SETTINGS ═══ -->
+      <div id="section-settings" class="section-pane" style="display:none">
+        <div class="page-title">
+          <div>
+            <h2>Hospital Settings</h2>
+            <p>Configure hospital identity used on receipts and printed bills</p>
+          </div>
+        </div>
+        <div class="settings-card">
+          <div class="logo-upload">
+            <div class="logo-preview" id="settings-logo-preview">
+              <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="#A0AEC0" stroke-width="1.5"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 22V2" />
+                <path d="M12 6c-3-2-7-2-9 0 2 3 7 2 9 0z" />
+                <path d="M12 6c3-2 7-2 9 0-2 3-7 2-9 0z" />
+                <path d="M8 8c-2 1-3 2.5-3 4s1 3 3 4c2 1 4 2 4 3s-2 2-4 3" />
+                <path d="M16 8c2 1 3 2.5 3 4s-1 3-3 4c-2 1-4 2-4 3s2 2 4 3" />
+              </svg>
+            </div>
+            <div>
+              <input type="file" id="settings-logo-file" accept="image/*" onchange="handleLogoUpload(event)" />
+              <div style="font-size:11px;color:var(--text-muted);margin-top:4px">PNG or JPG, shown on the printed bill
+                header</div>
+            </div>
+          </div>
+          <div class="form-grid">
+            <div class="form-group full">
+              <label>Hospital Name</label>
+              <input type="text" id="settings-name" placeholder="e.g. Male Hospital" />
+            </div>
+            <div class="form-group full">
+              <label>Tagline</label>
+              <input type="text" id="settings-tagline" placeholder="e.g. Multispeciality Hospital" />
+            </div>
+            <div class="form-group full">
+              <label>Address</label>
+              <input type="text" id="settings-address"
+                placeholder="1st Floor, Ganesh Darshan Building, Hariniwas Circle, Thane (W)" />
+            </div>
+            <div class="form-group">
+              <label>Contact Number</label>
+              <input type="text" id="settings-phone" placeholder="9967255996" />
+            </div>
+            <div class="form-group">
+              <label>Registration No.</label>
+              <input type="text" id="settings-reg" placeholder="TMC/ZONEA/0108" />
+            </div>
+          </div>
+          <div class="modal-footer" style="border-top:1px solid var(--border);padding:16px 0;margin-top:8px">
+            <button class="btn btn-primary" onclick="saveSettings()">Save Settings</button>
+          </div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+
+  <!-- ════════════ OUTPATIENT MODAL ════════════ -->
+  <div class="modal-overlay" id="modal-outpatient">
+    <div class="modal">
+      <div class="modal-header">
+        <div>
+          <h3 id="out-modal-title">Register OPD Visit</h3>
+          <p>Fill in patient and visit details below</p>
+        </div>
+        <button class="modal-close" onclick="closeModal('modal-outpatient')">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18" />
+            <line x1="6" y1="6" x2="18" y2="18" />
+          </svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="out-edit-id" />
+
+        <div class="form-section">
+          <div class="form-section-title">Patient Information</div>
+          <div class="form-grid cols-3">
+            <div class="form-group full">
+              <label>Full Name <span class="req">*</span></label>
+              <input type="text" id="out-name" placeholder="Patient's full name" />
+            </div>
+            <div class="form-group">
+              <label>Age <span class="req">*</span></label>
+              <input type="number" id="out-age" placeholder="Years" min="0" max="150" />
+            </div>
+            <div class="form-group">
+              <label>Gender <span class="req">*</span></label>
+              <select id="out-gender">
+                <option value="">Select gender</option>
+                <option>Male</option>
+                <option>Female</option>
+                <option>Other</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Phone <span class="req">*</span></label>
+              <input type="tel" id="out-phone" placeholder="Contact number" />
+            </div>
+            <div class="form-group full">
+              <label>Address</label>
+              <input type="text" id="out-address" placeholder="Patient's address" />
+            </div>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <div class="form-section-title">Visit Details</div>
+          <div class="form-grid">
+            <div class="form-group">
+              <label>Consulting Doctor <span class="req">*</span></label>
+              <select id="out-doctor"></select>
+            </div>
+            <div class="form-group">
+              <label>Referred By</label>
+              <select id="out-referred">
+                <option value="">Select referral doctor</option>
+                <option value="Self / Walk-in">Self / Walk-in</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Visit Date <span class="req">*</span></label>
+              <input type="date" id="out-date" />
+            </div>
+            <div class="form-group">
+              <label>Visit Time <span class="req">*</span></label>
+              <input type="time" id="out-time" />
+            </div>
+            <div class="form-group">
+              <label>Follow-up Date</label>
+              <input type="date" id="out-followup" />
+            </div>
+            <div class="form-group full">
+              <label>Symptoms / Chief Complaint <span class="req">*</span></label>
+              <textarea id="out-symptoms" placeholder="Describe patient's symptoms and complaints"></textarea>
+            </div>
+            <div class="form-group full">
+              <label>Diagnosis</label>
+              <textarea id="out-diagnosis" placeholder="Doctor's diagnosis"></textarea>
+            </div>
+            <div class="form-group full">
+              <label>Prescription / Treatment</label>
+              <textarea id="out-prescription" placeholder="Medications and treatment plan"></textarea>
+            </div>
+            <div class="form-group full">
+              <label>Additional Notes</label>
+              <textarea id="out-notes" placeholder="Any additional notes"></textarea>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeModal('modal-outpatient')">Cancel</button>
+        <button class="btn btn-primary" onclick="saveOutpatient()">Save Visit Record</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════ INPATIENT MODAL ════════════ -->
+  <div class="modal-overlay" id="modal-inpatient">
+    <div class="modal">
+      <div class="modal-header">
+        <div>
+          <h3 id="in-modal-title">Admit IPD</h3>
+          <p>Complete the admission form below</p>
+        </div>
+        <button class="modal-close" onclick="closeModal('modal-inpatient')">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18" />
+            <line x1="6" y1="6" x2="18" y2="18" />
+          </svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="in-edit-id" />
+
+        <div class="form-section">
+          <div class="form-section-title">Patient Information</div>
+          <div class="form-grid cols-3">
+            <div class="form-group full">
+              <label>Full Name <span class="req">*</span></label>
+              <input type="text" id="in-name" placeholder="Patient's full name" />
+            </div>
+            <div class="form-group">
+              <label>Age <span class="req">*</span></label>
+              <input type="number" id="in-age" placeholder="Years" min="0" />
+            </div>
+            <div class="form-group">
+              <label>Gender <span class="req">*</span></label>
+              <select id="in-gender">
+                <option value="">Select gender</option>
+                <option>Male</option>
+                <option>Female</option>
+                <option>Other</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Phone <span class="req">*</span></label>
+              <input type="tel" id="in-phone" placeholder="Contact number" />
+            </div>
+            <div class="form-group full">
+              <label>Address</label>
+              <input type="text" id="in-address" placeholder="Patient's address" />
+            </div>
+            <div class="form-group">
+              <label>Emergency Contact Name</label>
+              <input type="text" id="in-emg-name" placeholder="Name" />
+            </div>
+            <div class="form-group">
+              <label>Emergency Contact Phone</label>
+              <input type="tel" id="in-emg-phone" placeholder="Phone" />
+            </div>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <div class="form-section-title">Admission Details</div>
+          <div class="form-grid">
+            <div class="form-group">
+              <label>Consulting Doctor <span class="req">*</span></label>
+              <select id="in-doctor"></select>
+            </div>
+            <div class="form-group">
+              <label>Referred By</label>
+              <select id="in-referred">
+                <option value="">Select referral doctor</option>
+                <option value="Self / Walk-in">Self / Walk-in</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Ward <span class="req">*</span></label>
+              <select id="in-ward">
+                <option value="">Select ward</option>
+                <option>General Ward</option>
+                <option>Private Ward</option>
+                <option>ICU</option>
+                <option>CCU</option>
+                <option>Pediatric Ward</option>
+                <option>Maternity Ward</option>
+                <option>Surgical Ward</option>
+                <option>Orthopedic Ward</option>
+                <option>Neurology Ward</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Bed Number <span class="req">*</span></label>
+              <input type="text" id="in-bed" placeholder="e.g. B-12" />
+            </div>
+            <div class="form-group">
+              <label>Status</label>
+              <select id="in-status">
+                <option value="admitted">Admitted</option>
+                <option value="discharged">Discharged</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Admission Date <span class="req">*</span></label>
+              <input type="date" id="in-adm-date" />
+            </div>
+            <div class="form-group">
+              <label>Admission Time <span class="req">*</span></label>
+              <input type="time" id="in-adm-time" />
+            </div>
+            <div class="form-group">
+              <label>Discharge Date</label>
+              <input type="date" id="in-dis-date" />
+            </div>
+            <div class="form-group">
+              <label>Discharge Time</label>
+              <input type="time" id="in-dis-time" />
+            </div>
+            <div class="form-group full">
+              <label>Diagnosis <span class="req">*</span></label>
+              <textarea id="in-diagnosis" placeholder="Primary diagnosis"></textarea>
+            </div>
+            <div class="form-group full">
+              <label>Treatment Plan</label>
+              <textarea id="in-treatment" placeholder="Treatment plan and medications"></textarea>
+            </div>
+            <div class="form-group full">
+              <label>Notes</label>
+              <textarea id="in-notes" placeholder="Additional notes"></textarea>
+            </div>
+            <div class="form-group full">
+              <label>Photo Description</label>
+              <textarea id="in-photo-desc" placeholder="Photo description"></textarea>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeModal('modal-inpatient')">Cancel</button>
+        <button class="btn btn-primary" onclick="saveInpatient()">Save Admission</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════ DOCTOR MODAL ════════════ -->
+  <div class="modal-overlay" id="modal-doctor">
+    <div class="modal" style="max-width:460px">
+      <div class="modal-header">
+        <div>
+          <h3>Add New Doctor</h3>
+          <p>Register a physician to the hospital</p>
+        </div>
+        <button class="modal-close" onclick="closeModal('modal-doctor')">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18" />
+            <line x1="6" y1="6" x2="18" y2="18" />
+          </svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="form-grid">
+          <div class="form-group full">
+            <label>Full Name <span class="req">*</span></label>
+            <input type="text" id="doc-name" placeholder="Dr. Full Name" />
+          </div>
+          <div class="form-group full">
+            <label>Specialization <span class="req">*</span></label>
+            <select id="doc-spec">
+              <option value="">Select specialization</option>
+              <option>General Physician</option>
+              <option>Cardiologist</option>
+              <option>Neurologist</option>
+              <option>Orthopedic Surgeon</option>
+              <option>Pediatrician</option>
+              <option>Gynecologist</option>
+              <option>Dermatologist</option>
+              <option>Ophthalmologist</option>
+              <option>ENT Specialist</option>
+              <option>Psychiatrist</option>
+              <option>Radiologist</option>
+              <option>Oncologist</option>
+              <option>Urologist</option>
+              <option>Nephrologist</option>
+              <option>Gastroenterologist</option>
+              <option>Pulmonologist</option>
+              <option>Other</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Phone</label>
+            <input type="tel" id="doc-phone" placeholder="Contact number" />
+          </div>
+          <div class="form-group">
+            <label>Email</label>
+            <input type="email" id="doc-email" placeholder="Email address" />
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeModal('modal-doctor')">Cancel</button>
+        <button class="btn btn-primary" onclick="saveDoctor()">Add Doctor</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════ REFERRAL DOCTOR MODAL ════════════ -->
+  <div class="modal-overlay" id="modal-referral-doctor">
+    <div class="modal" style="max-width:460px">
+      <div class="modal-header">
+        <div>
+          <h3>Add Referral Doctor</h3>
+          <p>Register an external referring physician</p>
+        </div>
+        <button class="modal-close" onclick="closeModal('modal-referral-doctor')">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18" />
+            <line x1="6" y1="6" x2="18" y2="18" />
+          </svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="form-grid">
+          <div class="form-group full">
+            <label>Full Name <span class="req">*</span></label>
+            <input type="text" id="refdoc-name" placeholder="Dr. Full Name" />
+          </div>
+          <div class="form-group full">
+            <label>Specialization</label>
+            <input type="text" id="refdoc-spec" placeholder="e.g. General Physician" />
+          </div>
+          <div class="form-group">
+            <label>Phone</label>
+            <input type="tel" id="refdoc-phone" placeholder="Contact number" />
+          </div>
+          <div class="form-group">
+            <label>Hospital/Clinic</label>
+            <input type="text" id="refdoc-hosp" placeholder="Clinic name" />
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeModal('modal-referral-doctor')">Cancel</button>
+        <button class="btn btn-primary" onclick="saveReferralDoctor()">Add Doctor</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════ RECEIPT / PRINT PREVIEW MODAL ════════════ -->
+  <div class="modal-overlay receipt-modal" id="modal-receipt">
+    <div class="modal">
+      <div class="modal-header">
+        <div>
+          <h3>Print Preview</h3>
+          <p>Review the document, then send it to your printer</p>
+        </div>
+        <button class="modal-close" onclick="closeModal('modal-receipt')">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18" />
+            <line x1="6" y1="6" x2="18" y2="18" />
+          </svg>
+        </button>
+      </div>
+      <div id="receipt-frame-wrap">
+        <div id="receipt-doc"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeModal('modal-receipt')">Close</button>
+        <button class="btn btn-primary" onclick="window.print()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15">
+            <polyline points="6 9 6 2 18 2 18 9" />
+            <path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2" />
+            <rect x="6" y="14" width="12" height="8" />
+          </svg>
+          Print
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST -->
+  <div class="toast" id="toast"></div>
+
+  <script>
+    const API = 'http://localhost:5000/api';
+    let outpatients = [], inpatients = [], doctors = [], referralDoctors = [];
+    let outFilter = '', inFilter = '';
+    let hospitalSettings = {};
+    let bills = [], billFilters = {};
+    let sonoRecords = [], sonoFilters = {};
+    let currentBillType = 'OPD';
+    let billItems = [];
+    let billTemplates = { OPD: [], IPD: [] };
+
+    const INDICATION_LIST = [
+      'To diagnose intra-uterine and/or ectopic pregnancy and confirm viability',
+      'Estimation of gestational age (dating)',
+      'Detection of number of fetuses and their chorionicity',
+      'Suspected pregnancy with IUCD in-situ or suspected pregnancy following contraceptive failure/MTP failure',
+      'Vaginal bleeding / leaking',
+      'Follow-up of cases of abortion',
+      'Assessment of cervical canal and/or diameter of internal os',
+      'Discrepancy between uterine size and period of amenorrhea',
+      'Any suspected adnexal or uterine pathology / abnormality',
+      'Detection of chromosomal abnormalities, fetal structural defects and their follow-up',
+      'Assessment of liquor amnii',
+      'Preterm labor / preterm premature rupture of membranes',
+      'Evaluation of placental position, thickness, grading and abnormalities',
+      'Evaluation of umbilical cord — presentation, insertion, nuchal encirclement',
+      'Evaluation of previous Caesarean Section scars',
+      'Evaluation of fetal growth parameters, fetal weight and fetal well-being',
+      'Color flow mapping and duplex Doppler studies',
+      'Ultrasound guided procedures such as MTP, amniocentesis, fetal blood sampling',
+      'Observation of intra-partum events',
+      'Medical / surgical conditions complicating pregnancy',
+      'Research / scientific studies in recognized institutions'
+    ];
+
+    // ── CLOCK ──
+    function updateClock() {
+      const now = new Date();
+      document.getElementById('hdr-time').textContent =
+        now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      document.getElementById('hdr-date').textContent =
+        now.toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+    }
+    setInterval(updateClock, 1000);
+    updateClock();
+
+    // ── TOAST ──
+    function showToast(msg, type = 'success') {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.className = `toast ${type} show`;
+      setTimeout(() => t.classList.remove('show'), 3200);
+    }
+
+    // ── SECTION NAV ──
+    function showSection(name) {
+      document.querySelectorAll('.section-pane').forEach(p => p.style.display = 'none');
+      document.getElementById('section-' + name).style.display = 'block';
+      document.querySelectorAll('.nav-item').forEach(n => {
+        n.classList.toggle('active', n.dataset.nav === name);
+      });
+      if (name === 'dashboard') loadDashboard();
+      if (name === 'patients') { loadOutpatients(); loadInpatients(); }
+      if (name === 'doctors') loadDoctors();
+      if (name === 'billing') { loadBills(); }
+      if (name === 'sonography') { loadSonoRecords(); }
+      if (name === 'settings') { loadSettingsForm(); }
+    }
+
+    // ── TAB ──
+    function switchTab(tab) {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+      document.getElementById('tab-' + (tab === 'outpatient' ? 'out' : 'in') + '-btn').classList.add('active');
+      document.getElementById('pane-' + tab).classList.add('active');
+    }
+
+    // ── MODAL ──
+    function openModal(id) { document.getElementById(id).classList.add('open'); }
+    function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+    // ── LOAD DATA ──
+    async function loadAll() {
+      await loadDoctorsData();
+      await loadReferralDoctorsData();
+      await loadOutpatientsData();
+      await loadInpatientsData();
+      await loadSettingsData();
+      await loadBillTemplates();
+      populateDoctorDropdowns();
+      populateReferralDoctorDropdowns();
+      applyHospitalIdentity();
+      renderIndicationCheckboxes();
+      resetBillForm();
+      const today = new Date().toISOString().split('T')[0];
+      document.getElementById('sono-date').value = today;
+      loadDashboard();
+    }
+
+    async function loadDoctorsData() {
+      const r = await fetch(API + '/doctors');
+      doctors = await r.json();
+    }
+    async function loadReferralDoctorsData() {
+      const r = await fetch(API + '/referral_doctors');
+      referralDoctors = await r.json();
+    }
+    async function loadOutpatientsData() {
+      const r = await fetch(API + '/outpatients');
+      outpatients = await r.json();
+    }
+    async function loadInpatientsData() {
+      const r = await fetch(API + '/inpatients');
+      inpatients = await r.json();
+    }
+    async function loadSettingsData() {
+      const r = await fetch(API + '/settings');
+      hospitalSettings = await r.json();
+    }
+    async function loadBillTemplates() {
+      const r = await fetch(API + '/bill-templates');
+      billTemplates = await r.json();
+    }
+
+    function populateDoctorDropdowns() {
+      const opts = doctors.map(d => `<option value="${d.id}">${d.name} — ${d.specialization}</option>`).join('');
+      document.getElementById('out-doctor').innerHTML = '<option value="">Select doctor</option>' + opts;
+      document.getElementById('in-doctor').innerHTML = '<option value="">Select doctor</option>' + opts;
+      document.getElementById('bill-doctor').innerHTML = '<option value="">Select consultant doctor</option>' + opts;
+      document.getElementById('sono-doctor').innerHTML = '<option value="">Select doctor</option>' + opts;
+      document.getElementById('bill-filter-doctor').innerHTML = '<option value="">All Doctors</option>' + opts;
+    }
+
+    function populateReferralDoctorDropdowns() {
+      const opts = referralDoctors.map(d => `<option value="${d.id}">${d.name}${d.specialization ? ' — ' + d.specialization : ''}</option>`).join('');
+      const defaultOpt = '<option value="">Select referral doctor</option>';
+      const selfOpt = '<option value="Self / Walk-in">Self / Walk-in</option>';
+
+      const outRef = document.getElementById('out-referred');
+      if (outRef) outRef.innerHTML = defaultOpt + selfOpt + opts;
+
+      const inRef = document.getElementById('in-referred');
+      if (inRef) inRef.innerHTML = defaultOpt + selfOpt + opts;
+
+      const sonoRef = document.getElementById('sono-referred');
+      if (sonoRef) sonoRef.innerHTML = defaultOpt + selfOpt + opts;
+    }
+
+    // ── DASHBOARD ──
+    function loadDashboard() {
+      fetch(API + '/stats').then(r => r.json()).then(s => {
+        document.getElementById('stat-out').textContent = s.totalOutpatients;
+        document.getElementById('stat-in').textContent = s.totalInpatients;
+        document.getElementById('stat-admitted').textContent = s.currentlyAdmitted;
+        document.getElementById('stat-docs').textContent = s.totalDoctors;
+      });
+
+      const outTbody = document.getElementById('dash-out-tbody');
+      const recent5 = [...outpatients].slice(0, 5);
+      outTbody.innerHTML = recent5.length ? recent5.map(p => `
+    <tr>
+      <td><div class="patient-name">${p.patient_name}</div></td>
+      <td><small style="color:var(--teal)">${p.doctor_name}</small></td>
+      <td><small>${formatDate(p.visit_date)} ${p.visit_time}</small></td>
+    </tr>`).join('') : `<tr><td colspan="3" class="empty-state"><p>No visits yet</p></td></tr>`;
+
+      const inTbody = document.getElementById('dash-in-tbody');
+      const admitted = inpatients.filter(p => p.status === 'admitted').slice(0, 5);
+      inTbody.innerHTML = admitted.length ? admitted.map(p => `
+    <tr>
+      <td><div class="patient-name">${p.patient_name}</div></td>
+      <td><small>${p.ward} / ${p.bed_number}</small></td>
+      <td><small>${formatDate(p.admission_date)}</small></td>
+    </tr>`).join('') : `<tr><td colspan="3" class="empty-state"><p>No current admissions</p></td></tr>`;
+    }
+
+    // ── OUTPATIENTS ──
+    async function loadOutpatients() {
+      await loadOutpatientsData();
+      renderOutpatients();
+      document.getElementById('tab-out-count').textContent = outpatients.length;
+    }
+
+    function renderOutpatients() {
+      const data = outpatients.filter(p =>
+        (p.patient_name + p.doctor_name + p.symptoms + p.diagnosis).toLowerCase().includes(outFilter)
+      );
+      const tbody = document.getElementById('out-tbody');
+      tbody.innerHTML = data.length ? data.map(p => `
+    <tr>
+      <td>
+        <div class="patient-name">${p.patient_name}</div>
+        <div class="patient-id">${p.phone}</div>
+      </td>
+      <td>${p.age} yrs <span class="badge badge-${p.gender.toLowerCase()}">${p.gender}</span></td>
+      <td>
+        <div style="font-weight:500">${p.doctor_name}</div>
+        <small style="color:var(--teal)">${p.specialization}</small>
+      </td>
+      <td>
+        <div>${truncate(p.symptoms, 40)}</div>
+        ${p.diagnosis ? `<small style="color:var(--text-muted)">${truncate(p.diagnosis, 40)}</small>` : ''}
+      </td>
+      <td>
+        <div>${formatDate(p.visit_date)}</div>
+        <small>${p.visit_time}</small>
+      </td>
+      <td>${p.follow_up_date ? formatDate(p.follow_up_date) : '<span style="color:var(--text-muted)">—</span>'}</td>
+      <td>
+        <div class="actions-cell">
+          <button class="btn btn-secondary btn-sm" onclick="editOutpatient('${p.id}')">Edit</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteOutpatient('${p.id}')">Delete</button>
+        </div>
+      </td>
+    </tr>`).join('') :
+        `<tr><td colspan="7">
+      <div class="empty-state">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+        <p>No OPD records found</p>
+      </div>
+    </td></tr>`;
+    }
+
+    function filterOutpatients(v) { outFilter = v.toLowerCase(); renderOutpatients(); }
+
+    function openOutpatientModal(prefill) {
+      document.getElementById('out-edit-id').value = '';
+      document.getElementById('out-modal-title').textContent = 'Register Outpatient Visit';
+      ['out-name', 'out-age', 'out-phone', 'out-address', 'out-symptoms', 'out-diagnosis', 'out-prescription', 'out-notes'].forEach(id => document.getElementById(id).value = '');
+      document.getElementById('out-gender').value = '';
+      document.getElementById('out-doctor').value = '';
+      document.getElementById('out-referred').value = '';
+      const now = new Date();
+      document.getElementById('out-date').value = now.toISOString().split('T')[0];
+      document.getElementById('out-time').value = now.toTimeString().slice(0, 5);
+      document.getElementById('out-followup').value = '';
+      openModal('modal-outpatient');
+    }
+
+    function editOutpatient(id) {
+      const p = outpatients.find(x => x.id === id);
+      if (!p) return;
+      document.getElementById('out-edit-id').value = id;
+      document.getElementById('out-modal-title').textContent = 'Edit Outpatient Visit';
+      document.getElementById('out-name').value = p.patient_name;
+      document.getElementById('out-age').value = p.age;
+      document.getElementById('out-gender').value = p.gender;
+      document.getElementById('out-phone').value = p.phone;
+      document.getElementById('out-address').value = p.address || '';
+      document.getElementById('out-symptoms').value = p.symptoms;
+      document.getElementById('out-diagnosis').value = p.diagnosis || '';
+      document.getElementById('out-prescription').value = p.prescription || '';
+      document.getElementById('out-doctor').value = p.doctor_id;
+      document.getElementById('out-referred').value = p.referred_by || '';
+      document.getElementById('out-date').value = p.visit_date;
+      document.getElementById('out-time').value = p.visit_time;
+      document.getElementById('out-followup').value = p.follow_up_date || '';
+      document.getElementById('out-notes').value = p.notes || '';
+      openModal('modal-outpatient');
+    }
+
+    async function saveOutpatient() {
+      const id = document.getElementById('out-edit-id').value;
+      const body = {
+        patient_name: document.getElementById('out-name').value.trim(),
+        age: document.getElementById('out-age').value,
+        gender: document.getElementById('out-gender').value,
+        phone: document.getElementById('out-phone').value.trim(),
+        address: document.getElementById('out-address').value.trim(),
+        symptoms: document.getElementById('out-symptoms').value.trim(),
+        diagnosis: document.getElementById('out-diagnosis').value.trim(),
+        prescription: document.getElementById('out-prescription').value.trim(),
+        doctor_id: document.getElementById('out-doctor').value,
+        visit_date: document.getElementById('out-date').value,
+        visit_time: document.getElementById('out-time').value,
+        follow_up_date: document.getElementById('out-followup').value,
+        notes: document.getElementById('out-notes').value.trim(),
+        referred_by: document.getElementById('out-referred').value
+      };
+      if (!body.patient_name || !body.age || !body.gender || !body.phone || !body.symptoms || !body.doctor_id || !body.visit_date || !body.visit_time)
+        return showToast('Please fill all required fields', 'error');
+
+      const url = id ? `${API}/outpatients/${id}` : `${API}/outpatients`;
+      const method = id ? 'PUT' : 'POST';
+      const r = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+      if (r.ok) {
+        const outData = await r.json();
+        closeModal('modal-outpatient');
+        showToast(id ? 'Visit record updated' : 'Visit registered successfully');
+        await loadOutpatients();
+        loadDashboard();
+
+        if (!id) {
+          document.getElementById('bill-name').value = body.patient_name;
+          document.getElementById('bill-age').value = body.age + ' Yrs';
+          document.getElementById('bill-gender').value = body.gender;
+          document.getElementById('bill-phone').value = body.phone;
+          document.getElementById('bill-address').value = body.address;
+          document.getElementById('bill-doctor').value = body.doctor_id;
+          document.getElementById('bill-date').value = body.visit_date;
+          showSection('billing');
+          switchBillingTab('new');
+          setBillType('OPD');
+          showToast('Please add charges and generate the OPD bill', 'success');
+        }
+      } else showToast('Failed to save record', 'error');
+    }
+
+    async function deleteOutpatient(id) {
+      if (!confirm('Delete this outpatient record?')) return;
+      await fetch(`${API}/outpatients/${id}`, { method: 'DELETE' });
+      showToast('Record deleted');
+      await loadOutpatients();
+      loadDashboard();
+    }
+
+    // ── INPATIENTS ──
+    async function loadInpatients() {
+      await loadInpatientsData();
+      renderInpatients();
+      document.getElementById('tab-in-count').textContent = inpatients.length;
+    }
+
+    function renderInpatients() {
+      const data = inpatients.filter(p =>
+        (p.patient_name + p.doctor_name + p.ward + p.diagnosis).toLowerCase().includes(inFilter)
+      );
+      const tbody = document.getElementById('in-tbody');
+      tbody.innerHTML = data.length ? data.map(p => `
+    <tr>
+      <td>
+        <div class="patient-name">${p.patient_name}</div>
+        <div class="patient-id">${p.phone}</div>
+      </td>
+      <td>${p.age} yrs <span class="badge badge-${p.gender.toLowerCase()}">${p.gender}</span></td>
+      <td>
+        <div style="font-weight:500">${p.doctor_name}</div>
+        <small style="color:var(--teal)">${p.specialization}</small>
+      </td>
+      <td>
+        <div>${p.ward}</div>
+        <small>Bed: ${p.bed_number}</small>
+      </td>
+      <td>${truncate(p.diagnosis, 45)}</td>
+      <td>
+        <div>${formatDate(p.admission_date)}</div>
+        <small>${p.admission_time}</small>
+      </td>
+      <td><span class="badge badge-${p.status}">${capitalize(p.status)}</span></td>
+      <td>
+        <div class="actions-cell">
+          <button class="btn btn-secondary btn-sm" onclick="editInpatient('${p.id}')">Edit</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteInpatient('${p.id}')">Delete</button>
+        </div>
+      </td>
+    </tr>`).join('') :
+        `<tr><td colspan="8">
+      <div class="empty-state">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M19 3H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2V5a2 2 0 00-2-2zm-7 3v3H9v2h3v3h2v-3h3v-2h-3V6h-2z"/></svg>
+        <p>No IPD records found</p>
+      </div>
+    </td></tr>`;
+    }
+
+    function filterInpatients(v) { inFilter = v.toLowerCase(); renderInpatients(); }
+
+    function openInpatientModal() {
+      document.getElementById('in-edit-id').value = '';
+      document.getElementById('in-modal-title').textContent = 'Admit Inpatient';
+      ['in-name', 'in-age', 'in-phone', 'in-address', 'in-emg-name', 'in-emg-phone', 'in-bed', 'in-diagnosis', 'in-treatment', 'in-notes', 'in-photo-desc', 'in-dis-date', 'in-dis-time'].forEach(id => document.getElementById(id).value = '');
+      document.getElementById('in-gender').value = '';
+      document.getElementById('in-doctor').value = '';
+      document.getElementById('in-referred').value = '';
+      document.getElementById('in-ward').value = '';
+      document.getElementById('in-status').value = 'admitted';
+      const now = new Date();
+      document.getElementById('in-adm-date').value = now.toISOString().split('T')[0];
+      document.getElementById('in-adm-time').value = now.toTimeString().slice(0, 5);
+      openModal('modal-inpatient');
+    }
+
+    function editInpatient(id) {
+      const p = inpatients.find(x => x.id === id);
+      if (!p) return;
+      document.getElementById('in-edit-id').value = id;
+      document.getElementById('in-modal-title').textContent = 'Edit Inpatient';
+      document.getElementById('in-name').value = p.patient_name;
+      document.getElementById('in-age').value = p.age;
+      document.getElementById('in-gender').value = p.gender;
+      document.getElementById('in-phone').value = p.phone;
+      document.getElementById('in-address').value = p.address || '';
+      document.getElementById('in-emg-name').value = p.emergency_contact || '';
+      document.getElementById('in-emg-phone').value = p.emergency_phone || '';
+      document.getElementById('in-doctor').value = p.doctor_id;
+      document.getElementById('in-referred').value = p.referred_by || '';
+      document.getElementById('in-ward').value = p.ward;
+      document.getElementById('in-bed').value = p.bed_number;
+      document.getElementById('in-status').value = p.status;
+      document.getElementById('in-adm-date').value = p.admission_date;
+      document.getElementById('in-adm-time').value = p.admission_time;
+      document.getElementById('in-dis-date').value = p.discharge_date || '';
+      document.getElementById('in-dis-time').value = p.discharge_time || '';
+      document.getElementById('in-diagnosis').value = p.diagnosis;
+      document.getElementById('in-treatment').value = p.treatment || '';
+      document.getElementById('in-notes').value = p.notes || '';
+      document.getElementById('in-photo-desc').value = p.photo_description || '';
+      openModal('modal-inpatient');
+    }
+
+    async function saveInpatient() {
+      const id = document.getElementById('in-edit-id').value;
+      const body = {
+        patient_name: document.getElementById('in-name').value.trim(),
+        age: document.getElementById('in-age').value,
+        gender: document.getElementById('in-gender').value,
+        phone: document.getElementById('in-phone').value.trim(),
+        address: document.getElementById('in-address').value.trim(),
+        emergency_contact: document.getElementById('in-emg-name').value.trim(),
+        emergency_phone: document.getElementById('in-emg-phone').value.trim(),
+        doctor_id: document.getElementById('in-doctor').value,
+        ward: document.getElementById('in-ward').value,
+        bed_number: document.getElementById('in-bed').value.trim(),
+        status: document.getElementById('in-status').value,
+        admission_date: document.getElementById('in-adm-date').value,
+        admission_time: document.getElementById('in-adm-time').value,
+        discharge_date: document.getElementById('in-dis-date').value,
+        discharge_time: document.getElementById('in-dis-time').value,
+        diagnosis: document.getElementById('in-diagnosis').value.trim(),
+        treatment: document.getElementById('in-treatment').value.trim(),
+        notes: document.getElementById('in-notes').value.trim(),
+        photo_description: document.getElementById('in-photo-desc').value.trim(),
+        referred_by: document.getElementById('in-referred').value
+      };
+      if (!body.patient_name || !body.age || !body.gender || !body.phone || !body.doctor_id || !body.ward || !body.bed_number || !body.admission_date || !body.admission_time || !body.diagnosis)
+        return showToast('Please fill all required fields', 'error');
+
+      try {
+        const url = id ? `${API}/inpatients/${id}` : `${API}/inpatients`;
+        const method = id ? 'PUT' : 'POST';
+        const r = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+        if (r.ok) {
+          const inData = await r.json();
+          closeModal('modal-inpatient');
+          showToast(id ? 'Admission record updated' : 'Patient admitted successfully');
+          await loadInpatients();
+          loadDashboard();
+
+          if (!id) {
+            document.getElementById('bill-name').value = body.patient_name;
+            document.getElementById('bill-age').value = body.age + ' Yrs';
+            document.getElementById('bill-gender').value = body.gender;
+            document.getElementById('bill-phone').value = body.phone;
+            document.getElementById('bill-address').value = body.address;
+            document.getElementById('bill-doctor').value = body.doctor_id;
+            document.getElementById('bill-indoor').value = inData.id || '';
+            document.getElementById('bill-admdate').value = body.admission_date;
+            showSection('billing');
+            switchBillingTab('new');
+            setBillType('IPD');
+            showToast('Please add charges and generate the IPD bill', 'success');
+          }
+        } else {
+          const err = await r.json().catch(() => ({ error: 'Failed to save record' }));
+          showToast(err.error || 'Failed to save record', 'error');
+        }
+      } catch (e) {
+        showToast('Failed to connect to server. Please try again.', 'error');
+      }
+    }
+
+    async function deleteInpatient(id) {
+      if (!confirm('Delete this inpatient record?')) return;
+      await fetch(`${API}/inpatients/${id}`, { method: 'DELETE' });
+      showToast('Record deleted');
+      await loadInpatients();
+      loadDashboard();
+    }
+
+    // ── DOCTORS ──
+    async function loadDoctors() {
+      await loadDoctorsData();
+      await loadReferralDoctorsData();
+      renderDoctors();
+      renderReferralDoctors();
+    }
+
+    function renderDoctors() {
+      const grid = document.getElementById('doctor-grid');
+      grid.innerHTML = doctors.map(d => {
+        const initials = d.name.replace('Dr. ', '').split(' ').map(w => w[0]).join('').slice(0, 2);
+        return `
+    <div class="doctor-card">
+      <div class="doc-avatar">${initials}</div>
+      <div class="doc-info" style="flex:1">
+        <div class="name">${d.name}</div>
+        <div class="spec">${d.specialization}</div>
+        <div class="contact">${d.phone || '—'}</div>
+        <div class="contact">${d.email || '—'}</div>
+      </div>
+      <button class="btn btn-danger btn-sm" style="align-self:flex-start" onclick="deleteDoctor('${d.id}')">Remove</button>
+    </div>`;
+      }).join('') || '<p style="color:var(--text-muted);grid-column:1/-1">No doctors registered.</p>';
+    }
+
+    function openDoctorModal() {
+      document.getElementById('doc-name').value = '';
+      document.getElementById('doc-spec').value = '';
+      document.getElementById('doc-phone').value = '';
+      document.getElementById('doc-email').value = '';
+      openModal('modal-doctor');
+    }
+
+    async function saveDoctor() {
+      const body = {
+        name: document.getElementById('doc-name').value.trim(),
+        specialization: document.getElementById('doc-spec').value,
+        phone: document.getElementById('doc-phone').value.trim(),
+        email: document.getElementById('doc-email').value.trim()
+      };
+      if (!body.name || !body.specialization) return showToast('Name and specialization required', 'error');
+
+      try {
+        const r = await fetch(API + '/doctors', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+        if (r.ok) {
+          closeModal('modal-doctor');
+          showToast('Doctor added successfully');
+          await loadDoctors();
+          populateDoctorDropdowns();
+          loadDashboard();
+        } else {
+          showToast('Failed to add doctor', 'error');
+        }
+      } catch (e) {
+        showToast('Failed to connect to server', 'error');
+      }
+    }
+
+    async function deleteDoctor(id) {
+      if (!confirm('Remove this doctor from the system?')) return;
+      try {
+        const r = await fetch(`${API}/doctors/${id}`, { method: 'DELETE' });
+        if (r.ok) {
+          showToast('Doctor removed');
+          await loadDoctors();
+          populateDoctorDropdowns();
+          loadDashboard();
+        } else {
+          showToast('Failed to remove doctor', 'error');
+        }
+      } catch (e) {
+        showToast('Failed to connect to server', 'error');
+      }
+    }
+
+    function switchDocTab(type) {
+      document.getElementById('tab-doc-hosp').classList.toggle('active', type === 'hospital');
+      document.getElementById('tab-doc-ref').classList.toggle('active', type === 'referral');
+      document.getElementById('doctor-grid').style.display = type === 'hospital' ? 'grid' : 'none';
+      document.getElementById('referral-doctor-grid').style.display = type === 'referral' ? 'grid' : 'none';
+    }
+
+    function renderReferralDoctors() {
+      const grid = document.getElementById('referral-doctor-grid');
+      grid.innerHTML = referralDoctors.map(d => {
+        const initials = d.name.replace('Dr. ', '').split(' ').map(w => w[0]).join('').slice(0, 2);
+        return `
+    <div class="doctor-card">
+      <div class="doc-avatar" style="background:var(--slate)">${initials}</div>
+      <div class="doc-info" style="flex:1">
+        <div class="name">${d.name}</div>
+        <div class="spec">${d.specialization || 'General'}</div>
+        <div class="contact">${d.phone || '—'}</div>
+        <div class="contact">${d.hospital || '—'}</div>
+      </div>
+      <button class="btn btn-danger btn-sm" style="align-self:flex-start" onclick="deleteReferralDoctor('${d.id}')">Remove</button>
+    </div>`;
+      }).join('') || '<p style="color:var(--text-muted);grid-column:1/-1">No referral doctors registered.</p>';
+    }
+
+    function openReferralDoctorModal() {
+      document.getElementById('refdoc-name').value = '';
+      document.getElementById('refdoc-spec').value = '';
+      document.getElementById('refdoc-phone').value = '';
+      document.getElementById('refdoc-hosp').value = '';
+      openModal('modal-referral-doctor');
+    }
+
+    async function saveReferralDoctor() {
+      const body = {
+        name: document.getElementById('refdoc-name').value.trim(),
+        specialization: document.getElementById('refdoc-spec').value.trim(),
+        phone: document.getElementById('refdoc-phone').value.trim(),
+        hospital: document.getElementById('refdoc-hosp').value.trim()
+      };
+      if (!body.name) return showToast('Name is required', 'error');
+
+      try {
+        const r = await fetch(API + '/referral_doctors', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+        if (r.ok) {
+          closeModal('modal-referral-doctor');
+          showToast('Referral doctor added successfully');
+          await loadReferralDoctorsData();
+          renderReferralDoctors();
+          populateReferralDoctorDropdowns();
+        } else {
+          showToast('Failed to add referral doctor', 'error');
+        }
+      } catch (e) {
+        showToast('Failed to connect to server', 'error');
+      }
+    }
+
+    async function deleteReferralDoctor(id) {
+      if (!confirm('Remove this referral doctor from the system?')) return;
+      try {
+        const r = await fetch(`${API}/referral_doctors/${id}`, { method: 'DELETE' });
+        if (r.ok) {
+          showToast('Referral doctor removed');
+          await loadReferralDoctorsData();
+          renderReferralDoctors();
+          populateReferralDoctorDropdowns();
+        } else {
+          showToast('Failed to remove referral doctor', 'error');
+        }
+      } catch (e) {
+        showToast('Failed to connect to server', 'error');
+      }
+    }
+
+    // ══════════════════════════════════════════════
+    // ── HOSPITAL SETTINGS ──
+    // ══════════════════════════════════════════════
+    function applyHospitalIdentity() {
+      const s = hospitalSettings;
+      document.getElementById('hdr-hname').textContent = s.hospital_name || 'Male Hospital';
+      document.getElementById('hdr-htag').textContent = s.tagline || 'Hospital Management System';
+      document.title = (s.hospital_name || 'Male Hospital') + ' — Hospital Management System';
+      const hdrLogo = document.getElementById('hdr-logo');
+      if (s.logo_data) {
+        hdrLogo.innerHTML = `<img src="${s.logo_data}" style="width:100%;height:100%;object-fit:contain;border-radius:8px" />`;
+      } else {
+        hdrLogo.innerHTML = `<img src="logo.jpg" style="width:100%;height:100%;object-fit:contain;border-radius:8px" />`;
+      }
+      // Auto-fill Form F clinic fields from settings
+      const clinicEl = document.getElementById('sono-clinic-name');
+      const regEl = document.getElementById('sono-reg-no');
+      if (clinicEl) clinicEl.value = s.hospital_name || 'Male Hospital';
+      const addrEl = document.getElementById('sono-clinic-address');
+      if (addrEl) addrEl.value = s.address || '';
+      if (regEl) regEl.value = s.reg_no || '';
+    }
+
+    function loadSettingsForm() {
+      const s = hospitalSettings;
+      document.getElementById('settings-name').value = s.hospital_name || '';
+      document.getElementById('settings-tagline').value = s.tagline || '';
+      document.getElementById('settings-address').value = s.address || '';
+      document.getElementById('settings-phone').value = s.phone || '';
+      document.getElementById('settings-reg').value = s.reg_no || '';
+      const prev = document.getElementById('settings-logo-preview');
+      if (s.logo_data) {
+        prev.innerHTML = `<img src="${s.logo_data}" />`;
+      } else {
+        prev.innerHTML = `<img src="logo.jpg" />`;
+      }
+    }
+
+    function handleLogoUpload(evt) {
+      const file = evt.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        document.getElementById('settings-logo-preview').innerHTML = `<img src="${reader.result}" />`;
+        document.getElementById('settings-logo-file').dataset.b64 = reader.result;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    async function saveSettings() {
+      const body = {
+        hospital_name: document.getElementById('settings-name').value.trim() || 'Male Hospital',
+        tagline: document.getElementById('settings-tagline').value.trim(),
+        address: document.getElementById('settings-address').value.trim(),
+        phone: document.getElementById('settings-phone').value.trim(),
+        reg_no: document.getElementById('settings-reg').value.trim(),
+        logo_data: document.getElementById('settings-logo-file').dataset.b64 || hospitalSettings.logo_data || ''
+      };
+      const r = await fetch(API + '/settings', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+      if (r.ok) {
+        hospitalSettings = await r.json();
+        applyHospitalIdentity();
+        showToast('Hospital settings saved');
+      } else showToast('Failed to save settings', 'error');
+    }
+
+    // ══════════════════════════════════════════════
+    // ── BILLING ──
+    // ══════════════════════════════════════════════
+    function switchBillingTab(tab) {
+      document.querySelectorAll('#section-billing .tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('#section-billing .tab-pane').forEach(p => p.classList.remove('active'));
+      document.getElementById('tab-bill' + (tab === 'new' ? 'new' : 'rec') + '-btn').classList.add('active');
+      document.getElementById('pane-bill' + (tab === 'new' ? 'new' : 'records')).classList.add('active');
+    }
+
+    function openBillModal(type) {
+      resetBillForm(type);
+    }
+
+    function setBillType(type) {
+      currentBillType = type;
+      document.getElementById('bt-opd').classList.toggle('active', type === 'OPD');
+      document.getElementById('bt-ipd').classList.toggle('active', type === 'IPD');
+      const showIpd = type === 'IPD';
+      document.getElementById('bill-indoor-wrap').style.display = showIpd ? 'flex' : 'none';
+      document.getElementById('bill-admdate-wrap').style.display = showIpd ? 'flex' : 'none';
+      document.getElementById('bill-disdate-wrap').style.display = showIpd ? 'flex' : 'none';
+      billItems = (billTemplates[type] || []).map(it => ({ ...it }));
+      renderBillItems();
+    }
+
+    function resetBillForm(type) {
+      ['bill-name', 'bill-age', 'bill-phone', 'bill-address', 'bill-indoor', 'bill-admdate', 'bill-disdate', 'bill-diagnostic', 'bill-utr']
+        .forEach(id => document.getElementById(id).value = '');
+      document.getElementById('bill-gender').value = '';
+      document.getElementById('bill-doctor').value = '';
+      document.getElementById('bill-date').value = new Date().toISOString().split('T')[0];
+      setPayMode('cash');
+      setBillType(type || currentBillType || 'OPD');
+    }
+
+    function addBillItem(desc, amount) {
+      billItems.push({ description: desc || '', amount: amount || 0 });
+      renderBillItems();
+    }
+    function removeBillItem(idx) {
+      billItems.splice(idx, 1);
+      renderBillItems();
+    }
+    function updateBillItem(idx, field, value) {
+      billItems[idx][field] = field === 'amount' ? (parseFloat(value) || 0) : value;
+      recalcBillTotal();
+    }
+
+    function renderBillItems() {
+      const tbody = document.getElementById('bill-items-tbody');
+      tbody.innerHTML = billItems.map((it, i) => `
+    <tr>
+      <td>${i + 1}</td>
+      <td><input type="text" value="${escapeAttr(it.description)}" oninput="updateBillItem(${i},'description',this.value)" placeholder="Description" /></td>
+      <td><input type="number" min="0" step="0.01" value="${it.amount}" oninput="updateBillItem(${i},'amount',this.value)" /></td>
+      <td><button class="rm-item" onclick="removeBillItem(${i})" title="Remove">&times;</button></td>
+    </tr>`).join('');
+      recalcBillTotal();
+    }
+
+    function recalcBillTotal() {
+      const total = billItems.reduce((sum, it) => sum + (parseFloat(it.amount) || 0), 0);
+      document.getElementById('bill-total').textContent = '₹' + total.toLocaleString('en-IN', { minimumFractionDigits: 2 });
+    }
+
+    function setPayMode(mode) {
+      document.getElementById('pay-cash-label').classList.toggle('checked', mode === 'cash');
+      document.getElementById('pay-online-label').classList.toggle('checked', mode === 'online');
+      document.querySelector(`input[name=paymode][value=${mode}]`).checked = true;
+      document.getElementById('utr-wrap').style.display = mode === 'online' ? 'block' : 'none';
+    }
+
+    async function saveBill(andPrint) {
+      const payMode = document.querySelector('input[name=paymode]:checked').value;
+      const body = {
+        bill_type: currentBillType,
+        bill_date: document.getElementById('bill-date').value,
+        patient_name: document.getElementById('bill-name').value.trim(),
+        age: document.getElementById('bill-age').value.trim(),
+        gender: document.getElementById('bill-gender').value,
+        address: document.getElementById('bill-address').value.trim(),
+        phone: document.getElementById('bill-phone').value.trim(),
+        indoor_no: document.getElementById('bill-indoor').value.trim(),
+        admission_date: document.getElementById('bill-admdate').value,
+        discharge_date: document.getElementById('bill-disdate').value,
+        diagnostic: document.getElementById('bill-diagnostic').value.trim(),
+        doctor_id: document.getElementById('bill-doctor').value,
+        items: billItems.filter(it => it.description.trim() !== ''),
+        payment_mode: payMode,
+        utr_code: document.getElementById('bill-utr').value.trim()
+      };
+      if (!body.patient_name || !body.bill_date || !body.doctor_id)
+        return showToast('Please fill patient name, date and consultant doctor', 'error');
+      if (!body.items.length) return showToast('Add at least one billing item', 'error');
+      if (payMode === 'online' && !body.utr_code)
+        return showToast('Please enter the UTR / transaction code for online payment', 'error');
+
+      const r = await fetch(API + '/bills', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+      const data = await r.json();
+      if (r.ok) {
+        showToast(`Bill ${data.bill_no} generated successfully`);
+        resetBillForm(currentBillType);
+        await loadBills();
+        loadDashboard();
+        switchBillingTab('records');
+        if (andPrint) printBill(data);
+      } else showToast(data.error || 'Failed to save bill', 'error');
+    }
+
+    async function loadBills() {
+      const params = new URLSearchParams(billFilters);
+      const r = await fetch(API + '/bills?' + params.toString());
+      bills = await r.json();
+      renderBills();
+      document.getElementById('tab-bill-count').textContent = bills.length;
+    }
+    function filterBills(patch) {
+      Object.assign(billFilters, patch);
+      Object.keys(billFilters).forEach(k => { if (!billFilters[k]) delete billFilters[k]; });
+      loadBills();
+    }
+
+    function renderBills() {
+      const tbody = document.getElementById('bill-tbody');
+      tbody.innerHTML = bills.length ? bills.map(b => `
+    <tr>
+      <td><div class="patient-name">${b.bill_no}</div></td>
+      <td><span class="badge badge-${b.bill_type === 'IPD' ? 'admitted' : 'discharged'}">${b.bill_type}</span></td>
+      <td>${b.patient_name}</td>
+      <td><small style="color:var(--teal)">${b.doctor_name}</small></td>
+      <td>${formatDate(b.bill_date)}</td>
+      <td><b>₹${Number(b.total).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</b></td>
+      <td><span class="badge badge-${b.payment_mode === 'online' ? 'discharged' : 'admitted'}">${b.payment_mode === 'online' ? 'Online' : 'Cash'}</span></td>
+      <td>
+        <div class="actions-cell">
+          <button class="btn btn-secondary btn-sm" onclick="printBill(bills.find(x=>x.id==='${b.id}'))">Print</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteBill('${b.id}')">Delete</button>
+        </div>
+      </td>
+    </tr>`).join('') :
+        `<tr><td colspan="8"><div class="empty-state"><p>No bills found</p></div></td></tr>`;
+    }
+
+    async function deleteBill(id) {
+      if (!confirm('Delete this bill record?')) return;
+      await fetch(`${API}/bills/${id}`, { method: 'DELETE' });
+      showToast('Bill deleted');
+      await loadBills();
+      loadDashboard();
+    }
+
+    function printBill(b) {
+      const items = typeof b.items_json === 'string' ? JSON.parse(b.items_json) : b.items_json;
+      const s = hospitalSettings;
+      const logoHtml = s.logo_data
+        ? `<img src="${s.logo_data}" />`
+        : `<img src="logo.jpg" />`;
+
+      let html = '';
+
+      if (b.bill_type === 'IPD') {
+        const ipdRows = items.map((it, i) => `
+      <tr>
+        <td style="border:1px solid #000; text-align:center; padding:6px 8px;"><b>${i + 1}.</b></td>
+        <td style="border:1px solid #000; padding:6px 8px; font-weight: bold;">${escapeHtml(it.description)}</td>
+        <td style="border:1px solid #000; text-align:right; padding:6px 8px;">
+          ${it.amount ? Number(it.amount).toLocaleString('en-IN', { minimumFractionDigits: 2 }) : ''}
+        </td>
+      </tr>
+    `).join('');
+
+        html = `
+    <div style="border-bottom: 2px solid #000; padding-bottom: 8px; display: flex; align-items: center; gap: 16px;">
+      <div class="r-logo">${logoHtml}</div>
+      <div style="flex:1; text-align:center;">
+        <div style="font-size:36px; font-weight:900; letter-spacing:1px;">${escapeHtml(s.hospital_name || 'Male Hospital')}</div>
+        <div style="color:#000; font-size: 13px; font-weight:600; margin-top:4px;">${escapeHtml(s.address || '1st Floor, Ganesh Darshan Building, Hariniwas Circle, Thane (W)')}<br>Cont.: ${escapeHtml(s.phone || '9967255996')} &bull; REGD. No.: ${escapeHtml(s.reg_no || 'TMC/ZONEA/0108')}</div>
+      </div>
+      <div style="text-align:right; min-width:120px;">
+        <div style="font-size:14px; font-weight:bold; border-bottom:1px solid #000; display:inline-block; margin-bottom:4px; text-transform:uppercase;">CASH-MEMO</div>
+      </div>
+    </div>
+    
+    <div style="font-size: 14px; margin: 12px 0; line-height: 2; color:#000;">
+      <div style="display:flex; justify-content:space-between; margin-bottom: 4px;">
+        <div style="flex:1; display:flex; align-items:flex-end;"><b>Bill No.:</b><div style="border-bottom:1px solid #000; flex:1; margin-left:8px; padding-left:8px; font-weight:bold;">${b.bill_no}</div></div>
+        <div style="width:40px;"></div>
+        <div style="flex:1; display:flex; align-items:flex-end;"><b>Date :</b><div style="border-bottom:1px solid #000; flex:1; margin-left:8px; padding-left:8px; font-weight:bold;">${formatDate(b.bill_date)}</div></div>
+      </div>
+      <div style="display:flex; margin-bottom: 4px; align-items:flex-end;">
+        <b>Patient's Name</b><div style="border-bottom:1px solid #000; flex:1; margin-left:8px; padding-left:8px; font-weight:bold;">${escapeHtml(b.patient_name)}</div>
+      </div>
+      <div style="display:flex; margin-bottom: 4px; align-items:flex-end;">
+        <b>Add.:</b><div style="border-bottom:1px solid #000; flex:1; margin-left:8px; padding-left:8px; font-weight:bold;">${escapeHtml(b.address || '')}</div>
+      </div>
+      <div style="display:flex; margin-bottom: 4px; gap:16px; align-items:flex-end;">
+        <div style="display:flex; flex:1.2; align-items:flex-end;"><b>Date of Admission :</b><div style="border-bottom:1px solid #000; flex:1; margin-left:8px; padding-left:8px; font-weight:bold;">${b.admission_date ? formatDate(b.admission_date) : ''}</div></div>
+        <div style="display:flex; flex:1; align-items:flex-end;"><b>D.O. Discharge :</b><div style="border-bottom:1px solid #000; flex:1; margin-left:8px; padding-left:8px; font-weight:bold;">${b.discharge_date ? formatDate(b.discharge_date) : ''}</div></div>
+        <div style="display:flex; flex:1; align-items:flex-end;"><b>Diagnostic :</b><div style="border-bottom:1px solid #000; flex:1; margin-left:8px; padding-left:8px; font-weight:bold;">${escapeHtml(b.diagnostic || '')}</div></div>
+      </div>
+      <div style="display:flex; margin-bottom: 4px; gap:16px; align-items:flex-end;">
+        <div style="display:flex; flex:1; align-items:flex-end;"><b>Indoor No.</b><div style="border-bottom:1px solid #000; flex:1; margin-left:8px; padding-left:8px; font-weight:bold;">${escapeHtml(b.indoor_no || '')}</div></div>
+        <div style="display:flex; flex:2; align-items:flex-end;"><b>Consultant Dr.</b><div style="border-bottom:1px solid #000; flex:1; margin-left:8px; padding-left:8px; font-weight:bold;">${escapeHtml(b.doctor_name)}</div></div>
+      </div>
+    </div>
+    
+    <table style="width:100%; border-collapse: collapse; margin-bottom: 12px; border: 2px solid #000; color:#000;">
+      <thead>
+        <tr>
+          <th style="width:60px; border:1px solid #000; border-bottom:2px solid #000; padding:6px; font-size:14px;">S.No.</th>
+          <th style="border:1px solid #000; border-bottom:2px solid #000; padding:6px; font-size:14px; text-align:left; padding-left:16px;">Description</th>
+          <th style="width:150px; border:1px solid #000; border-bottom:2px solid #000; padding:6px; font-size:14px; text-align:center;">
+            AMOUNT<br><div style="display:flex; justify-content:space-between; font-size:11px; margin-top:4px;"><span>Rs.</span><span>P.</span></div>
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+        ${ipdRows}
+        <tr>
+          <td colspan="2" style="border:1px solid #000; text-align:right; padding:8px 16px; font-weight:bold; font-size:15px;">TOTAL</td>
+          <td style="border:1px solid #000; text-align:right; padding:8px; font-weight:bold; font-size:16px;">${Number(b.total).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+        </tr>
+      </tbody>
+    </table>
+    
+    <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-top: 30px; color:#000; font-weight:bold; font-size:15px;">
+      <div style="border-top:1px solid #000; padding-top:4px; width:200px; text-align:center;">
+        Receiver's Signature
+      </div>
+      <div style="font-size:20px;">
+        For ${escapeHtml(s.hospital_name || 'Male Hospital')}
+      </div>
+    </div>
+    `;
+      } else {
+        const rows = items.map((it, i) => `
+      <tr><td>${i + 1}</td><td>${escapeHtml(it.description)}</td><td class="amt">₹${Number(it.amount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td></tr>
+    `).join('');
+
+        html = `
+      <div class="r-head">
+        <div class="r-logo">${logoHtml}</div>
+        <div>
+          <div class="r-hname">${escapeHtml(s.hospital_name || 'Male Hospital')}</div>
+          <div class="r-htag">${escapeHtml(s.tagline || '')}</div>
+          <div class="r-hmeta">${escapeHtml(s.address || '1st Floor, Ganesh Darshan Building, Hariniwas Circle, Thane (W)')}${s.phone ? ' &bull; Contact: ' + escapeHtml(s.phone) : ' &bull; Contact: 9967255996'}${s.reg_no ? ' &bull; Regd. No.: ' + escapeHtml(s.reg_no) : ' &bull; Regd. No.: TMC/ZONEA/0108'}</div>
+        </div>
+        <div class="r-type">
+          <div class="badge-type">${b.bill_type === 'IPD' ? 'INDOOR PATIENT (IPD)' : 'OUTDOOR PATIENT (OPD)'}</div>
+          <div style="font-size:11px;margin-top:4px;color:var(--text-muted)">CASH MEMO</div>
+        </div>
+      </div>
+      <div class="r-billmeta">
+        <span><b>Bill No:</b> ${b.bill_no}</span>
+        <span><b>Date:</b> ${formatDate(b.bill_date)}</span>
+      </div>
+      <div class="r-patient">
+        <div><b>Patient's Name:</b> ${escapeHtml(b.patient_name)}</div>
+        <div><b>Age / Gender:</b> ${escapeHtml(b.age || '—')} ${b.gender ? '/ ' + escapeHtml(b.gender) : ''}</div>
+        <div><b>Address:</b> ${escapeHtml(b.address || '—')}</div>
+        <div><b>Phone:</b> ${escapeHtml(b.phone || '—')}</div>
+        <div><b>Consultant Dr.:</b> ${escapeHtml(b.doctor_name)}</div>
+        ${b.diagnostic ? `<div style="grid-column:1/-1"><b>Diagnostic:</b> ${escapeHtml(b.diagnostic)}</div>` : ''}
+      </div>
+      <table class="r-items">
+        <thead><tr><th style="width:40px">S.No</th><th>Description</th><th class="amt" style="width:130px">Amount (Rs.)</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+      <div class="r-total"><span>Total</span><span>₹${Number(b.total).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span></div>
+      <div class="r-pay">Payment Mode: <b>${b.payment_mode === 'online' ? 'Paid Online' : 'Cash'}</b>${b.payment_mode === 'online' ? ' &nbsp;|&nbsp; UTR / Txn Code: <b>' + escapeHtml(b.utr_code) + '</b>' : ''}</div>
+      <div class="r-foot">
+        <div>Receiver's Signature: ______________________</div>
+        <div class="r-sign">For ${escapeHtml(s.hospital_name || 'Male Hospital')}</div>
+      </div>
+    `;
+      }
+
+      document.getElementById('receipt-doc').innerHTML = html;
+      openModal('modal-receipt');
+    }
+
+    // ══════════════════════════════════════════════
+    // ── SONOGRAPHY (FORM F) ──
+    // ══════════════════════════════════════════════
+    function renderIndicationCheckboxes() {
+      const wrap = document.getElementById('sono-indications');
+      wrap.innerHTML = INDICATION_LIST.map((label, i) => `
+    <label><input type="checkbox" value="${escapeAttr(label)}" data-idx="${i}" /> ${escapeHtml(label)}</label>
+  `).join('');
+    }
+
+    function switchSonoTab(tab) {
+      document.querySelectorAll('#section-sonography .tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('#section-sonography .tab-pane').forEach(p => p.classList.remove('active'));
+      document.getElementById('tab-sono' + (tab === 'new' ? 'new' : 'rec') + '-btn').classList.add('active');
+      document.getElementById('pane-sono' + (tab === 'new' ? 'new' : 'records')).classList.add('active');
+    }
+
+    function updateDeclarationNames() {
+      const name = document.getElementById('sono-name').value.trim() || "[Patient's Name]";
+      document.getElementById('decl-patient-name-span').textContent = name;
+      document.getElementById('decl-patient-name-span-2').textContent = name;
+    }
+    
+    function updateDeclarationDoctor() {
+      const docSelect = document.getElementById('sono-doctor');
+      const docName = docSelect.options[docSelect.selectedIndex]?.text.split(' — ')[0] || "[Doctor Name]";
+      document.getElementById('decl-doctor-name-span').textContent = docName;
+    }
+    
+    function updateDeclarationDates() {
+      const date = document.getElementById('sono-date').value;
+      if (date) {
+        document.getElementById('sono-decl-patient-date').value = date;
+        document.getElementById('sono-decl-doc-date').value = date;
+        document.getElementById('sono-decl-date').value = date;
+        document.getElementById('sono-procdate').value = date;
+        document.getElementById('sono-conveyed-date').value = date;
+        document.getElementById('sono-inv-consent-date').value = date;
+        document.getElementById('sono-inv-procdate').value = date;
+        document.getElementById('sono-inv-conveyed-date').value = date;
+        document.getElementById('sono-decl-attester-date').value = date;
+      }
+    }
+    
+    function toggleReferralType(val) {
+      document.getElementById('sono-ref-doc-wrap').style.display = val === 'referred' ? 'flex' : 'none';
+      document.getElementById('sono-self-ref-wrap').style.display = val === 'self' ? 'flex' : 'none';
+    }
+    
+    function toggleInvasiveSection(checked) {
+      document.getElementById('sono-invasive-section').style.display = checked ? 'block' : 'none';
+    }
+    
+    function toggleAttesterSection(val) {
+      document.getElementById('sono-attester-section').style.display = val === 'thumb' ? 'block' : 'none';
+    }
+
+    function handleProcedureChange(val) {
+      const isInvasive = ['Amniocentesis', 'Chorionic Villi Aspiration', 'Fetal Biopsy', 'Cordocentesis'].includes(val);
+      if (isInvasive) {
+        document.getElementById('sono-is-invasive').checked = true;
+        toggleInvasiveSection(true);
+      }
+    }
+
+    function resetSonoForm() {
+      ['sono-name', 'sono-age', 'sono-contact', 'sono-husband', 'sono-address', 'sono-sons', 'sono-daughters',
+        'sono-lmp', 'sono-referred', 'sono-procdate', 'sono-result',
+        'sono-weeks', 'sono-sons-ages', 'sono-daughters-ages', 'sono-self-ref-details',
+        'sono-other-proc', 'sono-mtp-indication', 'sono-conveyed-to',
+        'sono-inv-doctor', 'sono-inv-history', 'sono-inv-basis-other-spec',
+        'sono-inv-ind-other-spec', 'sono-inv-ind-genetic-spec', 'sono-inv-ind-other-diag-spec',
+        'sono-inv-proc-other-spec', 'sono-inv-complications', 'sono-inv-test-other-spec',
+        'sono-inv-result', 'sono-inv-conveyed-to', 'sono-inv-mtp-indication',
+        'sono-decl-id-name', 'sono-decl-id-age', 'sono-decl-id-relation', 'sono-decl-id-address',
+        'sono-decl-attester-name'].forEach(id => {
+          const el = document.getElementById(id);
+          if (el) el.value = '';
+        });
+      
+      const today = new Date().toISOString().split('T')[0];
+      ['sono-date', 'sono-decl-date', 'sono-procdate', 'sono-conveyed-date',
+       'sono-inv-consent-date', 'sono-inv-procdate', 'sono-inv-conveyed-date',
+       'sono-decl-patient-date', 'sono-decl-doc-date', 'sono-decl-attester-date'].forEach(id => {
+         const el = document.getElementById(id);
+         if (el) el.value = today;
+       });
+
+      document.getElementById('sono-procedure').value = 'Ultrasound';
+      document.getElementById('sono-doctor').value = '';
+      document.getElementById('sono-ref-type').value = 'referred';
+      document.getElementById('sono-decl-mode').value = 'signature';
+      document.getElementById('sono-decl-id-sex').value = '';
+      
+      document.getElementById('sono-is-invasive').checked = true;
+      document.getElementById('sono-invasive-section').style.display = 'block';
+      document.getElementById('sono-attester-section').style.display = 'none';
+      document.getElementById('sono-self-ref-wrap').style.display = 'none';
+      document.getElementById('sono-ref-doc-wrap').style.display = 'flex';
+      
+      ['sono-inv-basis-clinical', 'sono-inv-basis-biochem', 'sono-inv-basis-cytogen', 'sono-inv-basis-other',
+       'sono-inv-ind-chrom', 'sono-inv-ind-metab', 'sono-inv-ind-congen', 'sono-inv-ind-mental',
+       'sono-inv-ind-haemo', 'sono-inv-ind-sexlink', 'sono-inv-ind-singlegene', 'sono-inv-ind-other',
+       'sono-inv-ind-age', 'sono-inv-ind-genetic', 'sono-inv-ind-other-diag',
+       'sono-inv-proc-amnio', 'sono-inv-proc-chorionic', 'sono-inv-proc-biopsy', 'sono-inv-proc-cordo', 'sono-inv-proc-other',
+       'sono-inv-test-chrom', 'sono-inv-test-biochem', 'sono-inv-test-molec', 'sono-inv-test-gender', 'sono-inv-test-other'].forEach(id => {
+         const el = document.getElementById(id);
+         if (el) el.checked = false;
+       });
+      
+      ['sono-inv-basis-other-spec', 'sono-inv-ind-other-spec', 'sono-inv-ind-genetic-spec',
+       'sono-inv-ind-other-diag-spec', 'sono-inv-proc-other-spec', 'sono-inv-test-other-spec'].forEach(id => {
+         const el = document.getElementById(id);
+         if (el) el.style.display = 'none';
+       });
+
+      document.querySelectorAll('#sono-indications input').forEach(cb => cb.checked = false);
+      
+      updateDeclarationNames();
+      updateDeclarationDoctor();
+      // Re-populate read-only clinic fields from settings
+      applyHospitalIdentity();
+    }
+
+    async function saveSono(andPrint) {
+      const indications = [...document.querySelectorAll('#sono-indications input:checked')].map(cb => cb.value);
+      
+      const extra_fields = {
+        weeks_of_pregnancy: document.getElementById('sono-weeks').value.trim(),
+        referral_type: document.getElementById('sono-ref-type').value,
+        self_referral_details: document.getElementById('sono-self-ref-details').value.trim(),
+        living_sons_ages: document.getElementById('sono-sons-ages').value.trim(),
+        living_daughters_ages: document.getElementById('sono-daughters-ages').value.trim(),
+        
+        declaration_date: document.getElementById('sono-decl-date').value,
+        other_non_invasive_procedure: document.getElementById('sono-other-proc').value.trim(),
+        conveyed_to: document.getElementById('sono-conveyed-to').value.trim(),
+        conveyed_date: document.getElementById('sono-conveyed-date').value,
+        mtp_indication: document.getElementById('sono-mtp-indication').value.trim(),
+        
+        is_invasive: document.getElementById('sono-is-invasive').checked,
+        
+        invasive: {
+          doctor: document.getElementById('sono-inv-doctor').value.trim(),
+          history: document.getElementById('sono-inv-history').value.trim(),
+          basis_clinical: document.getElementById('sono-inv-basis-clinical').checked,
+          basis_biochem: document.getElementById('sono-inv-basis-biochem').checked,
+          basis_cytogen: document.getElementById('sono-inv-basis-cytogen').checked,
+          basis_other: document.getElementById('sono-inv-basis-other').checked,
+          basis_other_spec: document.getElementById('sono-inv-basis-other-spec').value.trim(),
+          
+          ind_chrom: document.getElementById('sono-inv-ind-chrom').checked,
+          ind_metab: document.getElementById('sono-inv-ind-metab').checked,
+          ind_congen: document.getElementById('sono-inv-ind-congen').checked,
+          ind_mental: document.getElementById('sono-inv-ind-mental').checked,
+          ind_haemo: document.getElementById('sono-inv-ind-haemo').checked,
+          ind_sexlink: document.getElementById('sono-inv-ind-sexlink').checked,
+          ind_singlegene: document.getElementById('sono-inv-ind-singlegene').checked,
+          ind_other: document.getElementById('sono-inv-ind-other').checked,
+          ind_other_spec: document.getElementById('sono-inv-ind-other-spec').value.trim(),
+          ind_age: document.getElementById('sono-inv-ind-age').checked,
+          ind_genetic: document.getElementById('sono-inv-ind-genetic').checked,
+          ind_genetic_spec: document.getElementById('sono-inv-ind-genetic-spec').value.trim(),
+          ind_other_diag: document.getElementById('sono-inv-ind-other-diag').checked,
+          ind_other_diag_spec: document.getElementById('sono-inv-ind-other-diag-spec').value.trim(),
+          
+          consent_date: document.getElementById('sono-inv-consent-date').value,
+          
+          proc_amnio: document.getElementById('sono-inv-proc-amnio').checked,
+          proc_chorionic: document.getElementById('sono-inv-proc-chorionic').checked,
+          proc_biopsy: document.getElementById('sono-inv-proc-biopsy').checked,
+          proc_cordo: document.getElementById('sono-inv-proc-cordo').checked,
+          proc_other: document.getElementById('sono-inv-proc-other').checked,
+          proc_other_spec: document.getElementById('sono-inv-proc-other-spec').value.trim(),
+          
+          complications: document.getElementById('sono-inv-complications').value.trim(),
+          
+          test_chrom: document.getElementById('sono-inv-test-chrom').checked,
+          test_biochem: document.getElementById('sono-inv-test-biochem').checked,
+          test_molec: document.getElementById('sono-inv-test-molec').checked,
+          test_gender: document.getElementById('sono-inv-test-gender').checked,
+          test_other: document.getElementById('sono-inv-test-other').checked,
+          test_other_spec: document.getElementById('sono-inv-test-other-spec').value.trim(),
+          
+          proc_date: document.getElementById('sono-inv-procdate').value,
+          conveyed_to: document.getElementById('sono-inv-conveyed-to').value.trim(),
+          conveyed_date: document.getElementById('sono-inv-conveyed-date').value,
+          mtp_indication: document.getElementById('sono-inv-mtp-indication').value.trim(),
+          result: document.getElementById('sono-inv-result').value.trim()
+        },
+        
+        declaration: {
+          mode: document.getElementById('sono-decl-mode').value,
+          patient_date: document.getElementById('sono-decl-patient-date').value,
+          doc_date: document.getElementById('sono-decl-doc-date').value,
+          
+          id_name: document.getElementById('sono-decl-id-name').value.trim(),
+          id_age: document.getElementById('sono-decl-id-age').value,
+          id_sex: document.getElementById('sono-decl-id-sex').value,
+          id_relation: document.getElementById('sono-decl-id-relation').value.trim(),
+          id_address: document.getElementById('sono-decl-id-address').value.trim(),
+          attester_name: document.getElementById('sono-decl-attester-name').value.trim(),
+          attester_date: document.getElementById('sono-decl-attester-date').value
+        }
+      };
+
+      const body = {
+        entry_date: document.getElementById('sono-date').value,
+        patient_name: document.getElementById('sono-name').value.trim(),
+        age: document.getElementById('sono-age').value.trim(),
+        husband_father_name: document.getElementById('sono-husband').value.trim(),
+        address: document.getElementById('sono-address').value.trim(),
+        contact: document.getElementById('sono-contact').value.trim(),
+        living_sons: document.getElementById('sono-sons').value.trim(),
+        living_daughters: document.getElementById('sono-daughters').value.trim(),
+        referred_by: extra_fields.referral_type === 'referred' ? document.getElementById('sono-referred').value.trim() : 'Self-Referral',
+        lmp: document.getElementById('sono-lmp').value,
+        indications,
+        procedure_done: document.getElementById('sono-procedure').value,
+        doctor_id: document.getElementById('sono-doctor').value,
+        procedure_date: document.getElementById('sono-procdate').value,
+        result_notes: document.getElementById('sono-result').value.trim(),
+        declaration_no_sex_disclosed: true, // required declaration compliance
+        extra_fields
+      };
+      
+      if (!body.patient_name || !body.entry_date)
+        return showToast('Please fill patient name and entry date', 'error');
+
+      const r = await fetch(API + '/sonography', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+      const data = await r.json();
+      if (r.ok) {
+        showToast(`Form F entry ${data.entry_no} saved`);
+        resetSonoForm();
+        await loadSonoRecords();
+        if (andPrint) printSono(data);
+      } else showToast(data.error || 'Failed to save entry', 'error');
+    }
+
+    async function loadSonoRecords() {
+      const params = new URLSearchParams(sonoFilters);
+      const r = await fetch(API + '/sonography?' + params.toString());
+      sonoRecords = await r.json();
+      renderSono();
+      document.getElementById('tab-sono-count').textContent = sonoRecords.length;
+    }
+    function filterSono(patch) {
+      Object.assign(sonoFilters, patch);
+      Object.keys(sonoFilters).forEach(k => { if (!sonoFilters[k]) delete sonoFilters[k]; });
+      loadSonoRecords();
+    }
+
+    function renderSono() {
+      const tbody = document.getElementById('sono-tbody');
+      tbody.innerHTML = sonoRecords.length ? sonoRecords.map(s => `
+    <tr>
+      <td><div class="patient-name">${s.entry_no}</div></td>
+      <td>${s.patient_name}</td>
+      <td>${s.age || '—'}</td>
+      <td>${truncate(s.referred_by, 30) || '—'}</td>
+      <td>${s.procedure_done}</td>
+      <td>${formatDate(s.entry_date)}</td>
+      <td>
+        <div class="actions-cell">
+          <button class="btn btn-secondary btn-sm" onclick="printSono(sonoRecords.find(x=>x.id==='${s.id}'))">Print</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteSono('${s.id}')">Delete</button>
+        </div>
+      </td>
+    </tr>`).join('') :
+        `<tr><td colspan="7"><div class="empty-state"><p>No sonography records found</p></div></td></tr>`;
+    }
+
+    async function deleteSono(id) {
+      if (!confirm('Delete this Form F record?')) return;
+      await fetch(`${API}/sonography/${id}`, { method: 'DELETE' });
+      showToast('Record deleted');
+      await loadSonoRecords();
+    }
+
+    function printSono(s) {
+      const extra = s.extra_fields_json ? JSON.parse(s.extra_fields_json) : {};
+      const inds = typeof s.indications === 'string' ? JSON.parse(s.indications) : s.indications;
+      const hs = hospitalSettings;
+      
+      const html = `
+    <div style="font-family:'Inter', sans-serif; color:#000; line-height:1.4; font-size:12px; padding:10px;">
+      <!-- Main Form Header -->
+      <div style="text-align:center; margin-bottom:12px; border-bottom:2px solid #000; padding-bottom:8px;">
+        <h2 style="font-size:16px; font-weight:800; margin-bottom:4px; text-transform:uppercase;">FORM F</h2>
+        <div style="font-size:10px; font-weight:bold; margin-bottom:6px;">[See Proviso to Section 4(3), rule 9(4) and 10(1A)]</div>
+        <h3 style="font-size:11px; font-weight:700; text-transform:uppercase; max-width:600px; margin:0 auto; line-height:1.3;">
+          FORM FOR MAINTENANCE OF RECORD IN CASE OF PRENATAL DIAGNOSTIC TEST/PROCEDURE BY GENETIC CLINIC/ULTRASOUND CLINIC/IMAGING CENTRE
+        </h3>
+      </div>
+
+      <!-- Section A header -->
+      <div style="font-weight:bold; text-transform:uppercase; background:#eee; padding:4px 8px; border:1px solid #000; margin-bottom:8px;">
+        Section A: To be filled in for all Diagnostic Procedures/Tests
+      </div>
+
+      <div style="margin-bottom:12px; line-height:1.6;">
+        <table style="width:100%; border-collapse:collapse;">
+          <tr>
+            <td style="width:3%; font-weight:bold; vertical-align:top;">1.</td>
+            <td style="width:97%; font-weight:bold; vertical-align:top;" colspan="3">
+              Name and complete address of Genetic/Ultrasound Clinic/Imaging centre:
+              <span style="font-weight:normal; border-bottom:1px dashed #000; display:inline-block; width:100%; padding-left:4px;">
+                ${escapeHtml(hs.hospital_name || 'Male Hospital')} - ${escapeHtml(hs.address || 'Thane')}
+              </span>
+            </td>
+          </tr>
+          <tr>
+            <td style="font-weight:bold; vertical-align:top;">2.</td>
+            <td style="font-weight:bold; vertical-align:top;" colspan="3">
+              Registration No. (Under PC&PNDT Act, 1994):
+              <span style="font-weight:normal; border-bottom:1px dashed #000; padding-left:4px; min-width:200px; display:inline-block;">
+                ${escapeHtml(hs.reg_no || '')}
+              </span>
+            </td>
+          </tr>
+          <tr>
+            <td style="font-weight:bold; vertical-align:top;">3.</td>
+            <td style="font-weight:bold; vertical-align:top; width:47%;">
+              Patient’s name:
+              <span style="font-weight:normal; border-bottom:1px dashed #000; padding-left:4px; display:inline-block; width:70%;">
+                ${escapeHtml(s.patient_name)}
+              </span>
+            </td>
+            <td style="font-weight:bold; vertical-align:top; width:50%;" colspan="2">
+              Age:
+              <span style="font-weight:normal; border-bottom:1px dashed #000; padding-left:4px; display:inline-block; width:40%;">
+                ${escapeHtml(s.age || '—')} Yrs
+              </span>
+            </td>
+          </tr>
+          <tr>
+            <td style="font-weight:bold; vertical-align:top;">4.</td>
+            <td style="font-weight:bold; vertical-align:top;" colspan="3">
+              Total Number of living children:
+              <span style="font-weight:normal; border-bottom:1px dashed #000; padding-left:4px; display:inline-block; min-width:50px;">
+                ${(Number(s.living_sons || 0) + Number(s.living_daughters || 0)) || '0'}
+              </span>
+            </td>
+          </tr>
+          <tr>
+            <td></td>
+            <td style="font-weight:bold; vertical-align:top;" colspan="3">
+              (a) Number of living Sons with age of each living son (in years or months):
+              <span style="font-weight:normal; border-bottom:1px dashed #000; padding-left:4px; display:inline-block; min-width:300px;">
+                ${escapeHtml(s.living_sons || '0')} ${extra.living_sons_ages ? '(' + escapeHtml(extra.living_sons_ages) + ')' : ''}
+              </span>
+            </td>
+          </tr>
+          <tr>
+            <td></td>
+            <td style="font-weight:bold; vertical-align:top;" colspan="3">
+              (b) Number of living Daughters with age of each living daughter (in years or months):
+              <span style="font-weight:normal; border-bottom:1px dashed #000; padding-left:4px; display:inline-block; min-width:300px;">
+                ${escapeHtml(s.living_daughters || '0')} ${extra.living_daughters_ages ? '(' + escapeHtml(extra.living_daughters_ages) + ')' : ''}
+              </span>
+            </td>
+          </tr>
+          <tr>
+            <td style="font-weight:bold; vertical-align:top;">5.</td>
+            <td style="font-weight:bold; vertical-align:top;" colspan="3">
+              Husband’s /Wife’s/Father’s/Mother’s Name:
+              <span style="font-weight:normal; border-bottom:1px dashed #000; padding-left:4px; display:inline-block; min-width:400px;">
+                ${escapeHtml(s.husband_father_name || '—')}
+              </span>
+            </td>
+          </tr>
+          <tr>
+            <td style="font-weight:bold; vertical-align:top;">6.</td>
+            <td style="font-weight:bold; vertical-align:top;" colspan="3">
+              Full postal address of the patient with Contact Number, if any:
+              <span style="font-weight:normal; border-bottom:1px dashed #000; padding-left:4px; display:inline-block; width:95%;">
+                ${escapeHtml(s.address || '—')} ${s.contact ? ' (Cont: ' + escapeHtml(s.contact) + ')' : ''}
+              </span>
+            </td>
+          </tr>
+          <tr>
+            <td style="font-weight:bold; vertical-align:top;">7.</td>
+            <td style="font-weight:bold; vertical-align:top;" colspan="3">
+              (a) Referred by (Full name and address of Doctors(s)/Genetic Counseling Centre):
+              <span style="font-weight:normal; border-bottom:1px dashed #000; padding-left:4px; display:inline-block; width:95%;">
+                ${extra.referral_type === 'referred' ? escapeHtml(s.referred_by || '—') : '—'}
+              </span>
+            </td>
+          </tr>
+          <tr>
+            <td></td>
+            <td style="font-weight:bold; vertical-align:top;" colspan="3">
+              (b) Self-Referral-by Gynaecologist Radiologist/Registered Medical Practitioner conducting the diagnostic procedure:
+              <span style="font-weight:normal; border-bottom:1px dashed #000; padding-left:4px; display:inline-block; width:95%;">
+                ${extra.referral_type === 'self' ? (escapeHtml(extra.self_referral_details || 'Yes')) : '—'}
+              </span>
+            </td>
+          </tr>
+          <tr>
+            <td style="font-weight:bold; vertical-align:top;">8.</td>
+            <td style="font-weight:bold; vertical-align:top;" colspan="3">
+              Last menstrual period or weeks of pregnancy:
+              <span style="font-weight:normal; border-bottom:1px dashed #000; padding-left:4px; display:inline-block; min-width:250px;">
+                ${s.lmp ? formatDate(s.lmp) : ''} ${extra.weeks_of_pregnancy ? ' / ' + escapeHtml(extra.weeks_of_pregnancy) : ''}
+              </span>
+            </td>
+          </tr>
+        </table>
+      </div>
+
+      <!-- Section B header -->
+      <div style="font-weight:bold; text-transform:uppercase; background:#eee; padding:4px 8px; border:1px solid #000; margin-bottom:8px;">
+        Section B: To be filled for performing non-invasive diagnostic Procedures/Tests only
+      </div>
+
+      <div style="margin-bottom:12px; line-height:1.6;">
+        <table style="width:100%; border-collapse:collapse;">
+          <tr>
+            <td style="width:3%; font-weight:bold; vertical-align:top;">9.</td>
+            <td style="width:97%; font-weight:bold; vertical-align:top;">
+              Name of the doctor performing the procedure/s:
+              <span style="font-weight:normal; border-bottom:1px dashed #000; padding-left:4px; display:inline-block; min-width:300px;">
+                ${escapeHtml(s.doctor_name || '—')}
+              </span>
+            </td>
+          </tr>
+          <tr>
+            <td style="font-weight:bold; vertical-align:top;">10.</td>
+            <td style="font-weight:bold; vertical-align:top;">
+              Indication/s for diagnosis procedure (Reference to request in referral slip or self-referral note):
+              <div style="font-weight:normal; font-size:11px; margin-top:4px; border:1px solid #ddd; padding:8px; background:#fafafa; max-height:120px; overflow-y:auto; line-height:1.4;">
+                ${inds.length ? inds.map(i => '☑ ' + escapeHtml(i)).join('<br>') : 'None ticked'}
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td style="font-weight:bold; vertical-align:top;">11.</td>
+            <td style="font-weight:bold; vertical-align:top;">
+              Procedures carried out (Non-Invasive):
+              <span style="font-weight:normal; margin-left:8px;">
+                [${s.procedure_done === 'Ultrasound' ? '☑' : ' '}] I. Ultrasound
+              </span>
+              <span style="font-weight:normal; margin-left:24px;">
+                [${s.procedure_done !== 'Ultrasound' ? '☑' : ' '}] II. Any other (specify):
+                <span style="border-bottom:1px dashed #000; display:inline-block; min-width:150px; padding-left:4px;">
+                  ${s.procedure_done !== 'Ultrasound' ? escapeHtml(extra.other_non_invasive_procedure || s.procedure_done) : ''}
+                </span>
+              </span>
+              <div style="font-size:10px; font-weight:normal; color:#555; margin-top:2px;">
+                (Important Note: Ultrasound is not indicated/advised/performed to determine the sex of foetus except for diagnosis of sex-linked diseases such as Duchenne Muscular Dystrophy, Hemophilia A&B etc.)
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td style="font-weight:bold; vertical-align:top;">12.</td>
+            <td style="font-weight:bold; vertical-align:top;">
+              Date on which declaration of pregnant woman/person was obtained:
+              <span style="font-weight:normal; border-bottom:1px dashed #000; padding-left:4px; display:inline-block; min-width:150px;">
+                ${extra.declaration_date ? formatDate(extra.declaration_date) : formatDate(s.entry_date)}
+              </span>
+            </td>
+          </tr>
+          <tr>
+            <td style="font-weight:bold; vertical-align:top;">13.</td>
+            <td style="font-weight:bold; vertical-align:top;">
+              Date on which procedures carried out:
+              <span style="font-weight:normal; border-bottom:1px dashed #000; padding-left:4px; display:inline-block; min-width:150px;">
+                ${s.procedure_date ? formatDate(s.procedure_date) : formatDate(s.entry_date)}
+              </span>
+            </td>
+          </tr>
+          <tr>
+            <td style="font-weight:bold; vertical-align:top;">14.</td>
+            <td style="font-weight:bold; vertical-align:top;">
+              Result of the non-invasive procedure carried out (report in brief):
+              <div style="font-weight:normal; border:1px solid #ddd; padding:6px; background:#fff; min-height:40px; margin-top:4px;">
+                ${escapeHtml(s.result_notes || '—')}
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td style="font-weight:bold; vertical-align:top;">15.</td>
+            <td style="font-weight:bold; vertical-align:top;">
+              The result of pre-natal diagnostic procedures was conveyed to
+              <span style="font-weight:normal; border-bottom:1px dashed #000; padding-left:4px; min-width:150px; display:inline-block;">
+                ${escapeHtml(extra.conveyed_to || '—')}
+              </span>
+              on
+              <span style="font-weight:normal; border-bottom:1px dashed #000; padding-left:4px; min-width:120px; display:inline-block;">
+                ${extra.conveyed_date ? formatDate(extra.conveyed_date) : ''}
+              </span>
+            </td>
+          </tr>
+          <tr>
+            <td style="font-weight:bold; vertical-align:top;">16.</td>
+            <td style="font-weight:bold; vertical-align:top;">
+              Any indication for MTP as per the abnormality detected in the diagnostic procedures/tests:
+              <span style="font-weight:normal; border-bottom:1px dashed #000; padding-left:4px; display:inline-block; width:95%;">
+                ${escapeHtml(extra.mtp_indication || 'No')}
+              </span>
+            </td>
+          </tr>
+        </table>
+        
+        <div style="display:flex; justify-content:space-between; margin-top:12px; font-weight:bold;">
+          <span>Date: ${formatDate(s.entry_date)}</span>
+          <span>Place: Thane</span>
+          <span style="border-top:1px solid #000; width:220px; text-align:center; padding-top:4px; margin-top:20px;">
+            CONSULTING RADIOLOGIST & SONOLOGIST
+          </span>
+        </div>
+      </div>
+
+      <!-- Section C header -->
+      <div style="font-weight:bold; text-transform:uppercase; background:#eee; padding:4px 8px; border:1px solid #000; margin-bottom:8px; margin-top:16px;">
+        SECTION C: To be filled for performing invasive Procedure / Test only
+      </div>
+
+      <div style="margin-bottom:12px; line-height:1.6; opacity: 1">
+        <table style="width:100%; border-collapse:collapse;">
+          <tr>
+            <td style="width:3%; font-weight:bold; vertical-align:top;">17.</td>
+            <td style="width:97%; font-weight:bold; vertical-align:top;">
+              Name of the doctor/s performing the procedure/s:
+              <span style="font-weight:normal; border-bottom:1px dashed #000; padding-left:4px; display:inline-block; min-width:300px;">
+                ${escapeHtml(extra.invasive?.doctor || '—')}
+              </span>
+            </td>
+          </tr>
+          <tr>
+            <td style="font-weight:bold; vertical-align:top;">18.</td>
+            <td style="font-weight:bold; vertical-align:top;">
+              History of genetic/medical disease in the family (specify):
+              <span style="font-weight:normal; border-bottom:1px dashed #000; padding-left:4px; display:inline-block; width:95%;">
+                ${escapeHtml(extra.invasive?.history || '—')}
+              </span>
+              <br>
+              Basis of diagnosis:
+              <span style="font-weight:normal; margin-left:12px;">[${extra.invasive?.basis_clinical ? '☑' : ' '}] Clinical</span>
+              <span style="font-weight:normal; margin-left:12px;">[${extra.invasive?.basis_biochem ? '☑' : ' '}] Bio-chemical</span>
+              <span style="font-weight:normal; margin-left:12px;">[${extra.invasive?.basis_cytogen ? '☑' : ' '}] Cytogenetic</span>
+              <span style="font-weight:normal; margin-left:12px;">
+                [${extra.invasive?.basis_other ? '☑' : ' '}] Other:
+                <span style="border-bottom:1px dashed #000; padding-left:4px;">${extra.invasive?.basis_other ? escapeHtml(extra.invasive?.basis_other_spec) : ''}</span>
+              </span>
+            </td>
+          </tr>
+          <tr>
+            <td style="font-weight:bold; vertical-align:top;">19.</td>
+            <td style="font-weight:bold; vertical-align:top;">
+              Indication/s for the diagnosis procedure:
+              <div style="font-weight:normal; font-size:11px; margin-top:4px; display:grid; grid-template-columns:1fr 1fr; line-height:1.5;">
+                <div><b>A. Previous child/children with:</b><br>
+                  &nbsp;[${extra.invasive?.ind_chrom ? '☑' : ' '}] (i) Chromosomal disorders<br>
+                  &nbsp;[${extra.invasive?.ind_metab ? '☑' : ' '}] (ii) Metabolic disorders<br>
+                  &nbsp;[${extra.invasive?.ind_congen ? '☑' : ' '}] (iii) Congenital anomaly<br>
+                  &nbsp;[${extra.invasive?.ind_mental ? '☑' : ' '}] (iv) Mental Disability<br>
+                  &nbsp;[${extra.invasive?.ind_haemo ? '☑' : ' '}] (v) Haemoglobinopathy<br>
+                  &nbsp;[${extra.invasive?.ind_sexlink ? '☑' : ' '}] (vi) Sex linked disorders<br>
+                  &nbsp;[${extra.invasive?.ind_singlegene ? '☑' : ' '}] (vii) Single gene disorder<br>
+                  &nbsp;[${extra.invasive?.ind_other ? '☑' : ' '}] (viii) Other: ${extra.invasive?.ind_other ? escapeHtml(extra.invasive?.ind_other_spec) : ''}
+                </div>
+                <div>
+                  &nbsp;<br>
+                  [${extra.invasive?.ind_age ? '☑' : ' '}] <b>B. Advanced maternal age (35 years)</b><br>
+                  [${extra.invasive?.ind_genetic ? '☑' : ' '}] <b>C. Family genetic disease:</b> ${extra.invasive?.ind_genetic ? escapeHtml(extra.invasive?.ind_genetic_spec) : ''}<br>
+                  [${extra.invasive?.ind_other_diag ? '☑' : ' '}] <b>D. Other:</b> ${extra.invasive?.ind_other_diag ? escapeHtml(extra.invasive?.ind_other_diag_spec) : ''}
+                </div>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td style="font-weight:bold; vertical-align:top;">20.</td>
+            <td style="font-weight:bold; vertical-align:top;">
+              Date on which consent of pregnant woman/person was obtained in Form G prescribed in PC&PNDT Act, 1994:
+              <span style="font-weight:normal; border-bottom:1px dashed #000; padding-left:4px; display:inline-block; min-width:150px;">
+                ${extra.invasive?.consent_date ? formatDate(extra.invasive?.consent_date) : ''}
+              </span>
+            </td>
+          </tr>
+          <tr>
+            <td style="font-weight:bold; vertical-align:top;">21.</td>
+            <td style="font-weight:bold; vertical-align:top;">
+              Invasive procedures carried out:
+              <span style="font-weight:normal; margin-left:8px;">[${extra.invasive?.proc_amnio ? '☑' : ' '}] i. Amniocentesis</span>
+              <span style="font-weight:normal; margin-left:8px;">[${extra.invasive?.proc_chorionic ? '☑' : ' '}] ii. Chorionic Villi aspiration</span>
+              <span style="font-weight:normal; margin-left:8px;">[${extra.invasive?.proc_biopsy ? '☑' : ' '}] iii. Fetal biopsy</span>
+              <span style="font-weight:normal; margin-left:8px;">[${extra.invasive?.proc_cordo ? '☑' : ' '}] iv. Cordocentesis</span>
+              <span style="font-weight:normal; margin-left:8px;">
+                [${extra.invasive?.proc_other ? '☑' : ' '}] v. Other:
+                <span style="border-bottom:1px dashed #000; padding-left:4px;">${extra.invasive?.proc_other ? escapeHtml(extra.invasive?.proc_other_spec) : ''}</span>
+              </span>
+            </td>
+          </tr>
+          <tr>
+            <td style="font-weight:bold; vertical-align:top;">22.</td>
+            <td style="font-weight:bold; vertical-align:top;">
+              Any complication/s of invasive procedure (specify):
+              <span style="font-weight:normal; border-bottom:1px dashed #000; padding-left:4px; display:inline-block; width:95%;">
+                ${escapeHtml(extra.invasive?.complications || 'None')}
+              </span>
+            </td>
+          </tr>
+          <tr>
+            <td style="font-weight:bold; vertical-align:top;">23.</td>
+            <td style="font-weight:bold; vertical-align:top;">
+              Additional tests recommended (if applicable):
+              <span style="font-weight:normal; margin-left:8px;">[${extra.invasive?.test_chrom ? '☑' : ' '}] (i) Chromosomal studies</span>
+              <span style="font-weight:normal; margin-left:8px;">[${extra.invasive?.test_biochem ? '☑' : ' '}] (ii) Biochemical studies</span>
+              <span style="font-weight:normal; margin-left:8px;">[${extra.invasive?.test_molec ? '☑' : ' '}] (iii) Molecular studies</span>
+              <span style="font-weight:normal; margin-left:8px;">[${extra.invasive?.test_gender ? '☑' : ' '}] (iv) Pre-implantation gender diagnosis</span>
+              <span style="font-weight:normal; margin-left:8px;">
+                [${extra.invasive?.test_other ? '☑' : ' '}] (v) Other:
+                <span style="border-bottom:1px dashed #000; padding-left:4px;">${extra.invasive?.test_other ? escapeHtml(extra.invasive?.test_other_spec) : ''}</span>
+              </span>
+            </td>
+          </tr>
+          <tr>
+            <td style="font-weight:bold; vertical-align:top;">24.</td>
+            <td style="font-weight:bold; vertical-align:top;">
+              Result of the Procedure / Tests carried out (report in brief):
+              <div style="font-weight:normal; border:1px solid #ddd; padding:6px; background:#fff; min-height:40px; margin-top:4px;">
+                ${escapeHtml(extra.invasive?.result || '—')}
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td style="font-weight:bold; vertical-align:top;">25.</td>
+            <td style="font-weight:bold; vertical-align:top;">
+              Date on which procedures carried out:
+              <span style="font-weight:normal; border-bottom:1px dashed #000; padding-left:4px; display:inline-block; min-width:150px;">
+                ${extra.invasive?.proc_date ? formatDate(extra.invasive?.proc_date) : ''}
+              </span>
+            </td>
+          </tr>
+          <tr>
+            <td style="font-weight:bold; vertical-align:top;">26.</td>
+            <td style="font-weight:bold; vertical-align:top;">
+              The result of pre-natal diagnostic procedures was conveyed to
+              <span style="font-weight:normal; border-bottom:1px dashed #000; padding-left:4px; min-width:150px; display:inline-block;">
+                ${escapeHtml(extra.invasive?.conveyed_to || '—')}
+              </span>
+              on
+              <span style="font-weight:normal; border-bottom:1px dashed #000; padding-left:4px; min-width:120px; display:inline-block;">
+                ${extra.invasive?.conveyed_date ? formatDate(extra.invasive?.conveyed_date) : ''}
+              </span>
+            </td>
+          </tr>
+          <tr>
+            <td style="font-weight:bold; vertical-align:top;">27.</td>
+            <td style="font-weight:bold; vertical-align:top;">
+              Any indication for MTP as per the abnormality detected in the diagnostic procedures/tests:
+              <span style="font-weight:normal; border-bottom:1px dashed #000; padding-left:4px; display:inline-block; width:95%;">
+                ${escapeHtml(extra.invasive?.mtp_indication || 'No')}
+              </span>
+            </td>
+          </tr>
+        </table>
+        
+        <div style="display:flex; justify-content:space-between; margin-top:12px; font-weight:bold;">
+          <span>Date: ${extra.invasive?.proc_date ? formatDate(extra.invasive?.proc_date) : formatDate(s.entry_date)}</span>
+          <span>Place: Thane</span>
+          <span style="border-top:1px solid #000; width:220px; text-align:center; padding-top:4px; margin-top:20px;">
+            CONSULTING RADIOLOGIST & SONOLOGIST
+          </span>
+        </div>
+      </div>
+
+      <!-- Section D header -->
+      <div style="font-weight:bold; text-transform:uppercase; background:#eee; padding:4px 8px; border:1px solid #000; margin-bottom:8px; margin-top:16px;">
+        SECTION D: Declaration
+      </div>
+
+      <div style="margin-bottom:12px; line-height:1.6;">
+        <h4 style="font-size:12px; font-weight:bold; text-align:center; margin-bottom:6px; text-decoration:underline;">
+          DECLARATION OF THE PERSON UNDERGOING PRENATAL DIAGNOSTIC TEST/PROCEDURE
+        </h4>
+        <p style="text-align:justify; margin-bottom:16px;">
+          I, Mrs./Mr. <span style="border-bottom:1px solid #000; font-weight:bold; padding:0 8px;">${escapeHtml(s.patient_name)}</span> 
+          declare that by undergoing Prenatal Diagnostic Test/Procedure, I do not want to know the sex of my foetus.
+        </p>
+
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:16px;">
+          <div>
+            <b>Date:</b> <span style="border-bottom:1px dashed #000; padding:0 8px;">${extra.declaration?.patient_date ? formatDate(extra.declaration?.patient_date) : formatDate(s.entry_date)}</span>
+          </div>
+          <div style="text-align:center; min-width:260px;">
+            <div style="height:44px; display:flex; align-items:center; justify-content:center; border:1px dashed #ccc; margin-bottom:4px; font-size:11px; color:#666; background:#fafafa;">
+              ${extra.declaration?.mode === 'thumb' ? 'Thumb Impression' : 'Signature'} Area
+            </div>
+            <b>Signature/Thumb Impression of the Person undergoing the Prenatal Diagnostic Test/Procedure</b>
+          </div>
+        </div>
+
+        <!-- Attester Sub-section if thumb impression -->
+        ${extra.declaration?.mode === 'thumb' ? `
+        <div style="border:1px solid #000; padding:8px; margin-bottom:16px; font-size:11px; line-height:1.5;">
+          <b>In Case of thumb Impression:</b> Identified (Name): <span style="border-bottom:1px dashed #000; font-weight:bold;">${escapeHtml(extra.declaration?.id_name)}</span> 
+          &nbsp;&nbsp; Age: <span style="border-bottom:1px dashed #000; font-weight:bold;">${escapeHtml(extra.declaration?.id_age)}</span> 
+          &nbsp;&nbsp; Sex: <span style="border-bottom:1px dashed #000; font-weight:bold;">${escapeHtml(extra.declaration?.id_sex)}</span> 
+          &nbsp;&nbsp; Relation (if any): <span style="border-bottom:1px dashed #000; font-weight:bold;">${escapeHtml(extra.declaration?.id_relation)}</span><br>
+          Address & Contact No: <span style="border-bottom:1px dashed #000; font-weight:bold;">${escapeHtml(extra.declaration?.id_address)}</span><br>
+          <div style="display:flex; justify-content:space-between; margin-top:8px; align-items:flex-end;">
+            <span>Signature of person attesting thumb impression: ______________________</span>
+            <span>Date: ${extra.declaration?.attester_date ? formatDate(extra.declaration?.attester_date) : ''}</span>
+          </div>
+        </div>
+        ` : ''}
+
+        <h4 style="font-size:12px; font-weight:bold; text-align:center; margin-bottom:6px; margin-top:16px; text-decoration:underline;">
+          DECLARATION OF DOCTOR / PERSON CONDUCTING PRENATAL DIAGNOSTIC PROCEDURE/TEST
+        </h4>
+        <p style="text-align:justify; margin-bottom:16px;">
+          I, <span style="border-bottom:1px solid #000; font-weight:bold; padding:0 8px;">${escapeHtml(s.doctor_name || 'Dr. C. P. BARURE')}</span> 
+          declare that while conducting ultrasonography/image scanning on Ms./Mr. <span style="border-bottom:1px solid #000; font-weight:bold; padding:0 8px;">${escapeHtml(s.patient_name)}</span>, 
+          I have neither detected nor disclosed the sex of her fetus to anybody in any manner.
+        </p>
+
+        <div style="display:flex; justify-content:space-between; align-items:flex-end; font-weight:bold;">
+          <div>
+            Date: <span style="border-bottom:1px dashed #000; padding:0 8px;">${extra.declaration?.doc_date ? formatDate(extra.declaration?.doc_date) : formatDate(s.entry_date)}</span>
+          </div>
+          <div style="text-align:center;">
+            <div style="height:30px;"></div>
+            <div style="border-top:1px solid #000; width:220px; text-align:center; padding-top:4px;">
+              Signature (Doctor)<br>
+              <span style="font-size:10px; font-weight:normal;">CONSULTING RADIOLOGIST & SONOLOGIST</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+      document.getElementById('receipt-doc').innerHTML = html;
+      openModal('modal-receipt');
+    }
+
+    function escapeHtml(str) {
+      return (str ?? '').toString().replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
+    }
+    function escapeAttr(str) { return escapeHtml(str); }
+
+    // ── UTILS ──
+    function formatDate(d) {
+      if (!d) return '—';
+      const dt = new Date(d + 'T00:00:00');
+      return dt.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+    }
+    function truncate(s, n) { return s && s.length > n ? s.slice(0, n) + '…' : (s || ''); }
+    function capitalize(s) { return s ? s.charAt(0).toUpperCase() + s.slice(1) : ''; }
+
+    // ── INIT ──
+    loadAll();
+  </script>
+</body>
+
+</html>

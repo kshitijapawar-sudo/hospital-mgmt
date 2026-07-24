@@ -1,0 +1,583 @@
+#!/usr/bin/env python3
+"""
+MediCare HMS — Backend Server
+Run: python3 server.py
+Requires: Python 3.8+ (uses only standard library)
+"""
+
+import json
+import sqlite3
+import uuid
+from http.server import HTTPServer, BaseHTTPRequestHandler
+from urllib.parse import urlparse, parse_qs
+from datetime import datetime
+import os
+
+DB_PATH = os.path.join(os.path.dirname(__file__), 'hospital.db')
+
+# ─── DATABASE SETUP ─────────────────────────────────────────
+def get_db():
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    return conn
+
+def init_db():
+    conn = get_db()
+    c = conn.cursor()
+    c.executescript("""
+        CREATE TABLE IF NOT EXISTS doctors (
+            id TEXT PRIMARY KEY,
+            name TEXT NOT NULL,
+            specialization TEXT NOT NULL,
+            phone TEXT DEFAULT '',
+            email TEXT DEFAULT '',
+            created_at TEXT DEFAULT (datetime('now', 'localtime'))
+        );
+
+        CREATE TABLE IF NOT EXISTS outpatients (
+            id TEXT PRIMARY KEY,
+            patient_name TEXT NOT NULL,
+            age INTEGER NOT NULL,
+            gender TEXT NOT NULL,
+            phone TEXT NOT NULL,
+            address TEXT DEFAULT '',
+            symptoms TEXT NOT NULL,
+            diagnosis TEXT DEFAULT '',
+            prescription TEXT DEFAULT '',
+            doctor_id TEXT NOT NULL,
+            visit_date TEXT NOT NULL,
+            visit_time TEXT NOT NULL,
+            follow_up_date TEXT DEFAULT '',
+            notes TEXT DEFAULT '',
+            created_at TEXT DEFAULT (datetime('now', 'localtime')),
+            FOREIGN KEY (doctor_id) REFERENCES doctors(id)
+        );
+
+        CREATE TABLE IF NOT EXISTS hospital_settings (
+            id INTEGER PRIMARY KEY CHECK (id = 1),
+            hospital_name TEXT NOT NULL DEFAULT 'MediCare HMS',
+            tagline TEXT DEFAULT 'Hospital Management System',
+            address TEXT DEFAULT '',
+            phone TEXT DEFAULT '',
+            reg_no TEXT DEFAULT '',
+            logo_data TEXT DEFAULT '',
+            next_opd_no INTEGER NOT NULL DEFAULT 1,
+            next_ipd_no INTEGER NOT NULL DEFAULT 1
+        );
+
+        CREATE TABLE IF NOT EXISTS bills (
+            id TEXT PRIMARY KEY,
+            bill_no TEXT NOT NULL UNIQUE,
+            bill_type TEXT NOT NULL CHECK (bill_type IN ('OPD','IPD')),
+            bill_date TEXT NOT NULL,
+            patient_name TEXT NOT NULL,
+            age TEXT DEFAULT '',
+            gender TEXT DEFAULT '',
+            address TEXT DEFAULT '',
+            phone TEXT DEFAULT '',
+            indoor_no TEXT DEFAULT '',
+            admission_date TEXT DEFAULT '',
+            discharge_date TEXT DEFAULT '',
+            diagnostic TEXT DEFAULT '',
+            doctor_id TEXT NOT NULL,
+            items_json TEXT NOT NULL DEFAULT '[]',
+            total REAL NOT NULL DEFAULT 0,
+            payment_mode TEXT NOT NULL DEFAULT 'cash' CHECK (payment_mode IN ('cash','online')),
+            utr_code TEXT DEFAULT '',
+            outpatient_id TEXT DEFAULT '',
+            inpatient_id TEXT DEFAULT '',
+            created_at TEXT DEFAULT (datetime('now', 'localtime')),
+            FOREIGN KEY (doctor_id) REFERENCES doctors(id)
+        );
+        CREATE INDEX IF NOT EXISTS idx_bills_date ON bills(bill_date);
+        CREATE INDEX IF NOT EXISTS idx_bills_doctor ON bills(doctor_id);
+        CREATE INDEX IF NOT EXISTS idx_bills_type ON bills(bill_type);
+        CREATE INDEX IF NOT EXISTS idx_bills_patient ON bills(patient_name);
+
+        CREATE TABLE IF NOT EXISTS sonography (
+            id TEXT PRIMARY KEY,
+            entry_no TEXT NOT NULL UNIQUE,
+            entry_date TEXT NOT NULL,
+            patient_name TEXT NOT NULL,
+            age TEXT DEFAULT '',
+            husband_father_name TEXT DEFAULT '',
+            address TEXT DEFAULT '',
+            contact TEXT DEFAULT '',
+            living_sons TEXT DEFAULT '',
+            living_daughters TEXT DEFAULT '',
+            referred_by TEXT DEFAULT '',
+            lmp TEXT DEFAULT '',
+            indications TEXT DEFAULT '[]',
+            procedure_done TEXT DEFAULT 'Ultrasound',
+            doctor_id TEXT DEFAULT '',
+            procedure_date TEXT DEFAULT '',
+            result_notes TEXT DEFAULT '',
+            declaration_no_sex_disclosed INTEGER DEFAULT 1,
+            extra_fields_json TEXT DEFAULT '{}',
+            created_at TEXT DEFAULT (datetime('now', 'localtime')),
+            FOREIGN KEY (doctor_id) REFERENCES doctors(id)
+        );
+        CREATE INDEX IF NOT EXISTS idx_sono_date ON sonography(entry_date);
+        CREATE INDEX IF NOT EXISTS idx_sono_patient ON sonography(patient_name);
+
+        CREATE TABLE IF NOT EXISTS inpatients (
+            id TEXT PRIMARY KEY,
+            patient_name TEXT NOT NULL,
+            age INTEGER NOT NULL,
+            gender TEXT NOT NULL,
+            phone TEXT NOT NULL,
+            address TEXT DEFAULT '',
+            emergency_contact TEXT DEFAULT '',
+            emergency_phone TEXT DEFAULT '',
+            admission_date TEXT NOT NULL,
+            admission_time TEXT NOT NULL,
+            ward TEXT NOT NULL,
+            bed_number TEXT NOT NULL,
+            diagnosis TEXT NOT NULL,
+            treatment TEXT DEFAULT '',
+            doctor_id TEXT NOT NULL,
+            discharge_date TEXT DEFAULT '',
+            discharge_time TEXT DEFAULT '',
+            status TEXT DEFAULT 'admitted',
+            notes TEXT DEFAULT '',
+            photo_description TEXT DEFAULT '',
+            created_at TEXT DEFAULT (datetime('now', 'localtime')),
+            FOREIGN KEY (doctor_id) REFERENCES doctors(id)
+        );
+    """)
+
+    # Seed doctors
+    cnt = c.execute("SELECT COUNT(*) FROM doctors").fetchone()[0]
+    if cnt == 0:
+        seed = [
+            (str(uuid.uuid4()), 'Dr. Rajesh Kumar',  'General Physician',  '9876543210', 'rajesh@hospital.com'),
+            (str(uuid.uuid4()), 'Dr. Priya Sharma',  'Cardiologist',       '9876543211', 'priya@hospital.com'),
+            (str(uuid.uuid4()), 'Dr. Anil Mehta',    'Orthopedic Surgeon', '9876543212', 'anil@hospital.com'),
+            (str(uuid.uuid4()), 'Dr. Sunita Patel',  'Neurologist',        '9876543213', 'sunita@hospital.com'),
+            (str(uuid.uuid4()), 'Dr. Vikram Singh',  'Pediatrician',       '9876543214', 'vikram@hospital.com'),
+        ]
+        c.executemany("INSERT INTO doctors (id,name,specialization,phone,email) VALUES (?,?,?,?,?)", seed)
+
+    # Seed hospital settings (singleton row)
+    scnt = c.execute("SELECT COUNT(*) FROM hospital_settings").fetchone()[0]
+    if scnt == 0:
+        c.execute("""INSERT INTO hospital_settings
+            (id,hospital_name,tagline,address,phone,reg_no,logo_data,next_opd_no,next_ipd_no)
+            VALUES (1,'MediCare HMS','Hospital Management System','','','','',1,1)""")
+
+    # Schema Migrations
+    cols = [col[1] for col in c.execute('PRAGMA table_info(inpatients)').fetchall()]
+    if 'photo_description' not in cols:
+        c.execute("ALTER TABLE inpatients ADD COLUMN photo_description TEXT DEFAULT ''")
+    if 'referred_by' not in cols:
+        c.execute("ALTER TABLE inpatients ADD COLUMN referred_by TEXT DEFAULT ''")
+
+    out_cols = [col[1] for col in c.execute('PRAGMA table_info(outpatients)').fetchall()]
+    if 'referred_by' not in out_cols:
+      c.execute("ALTER TABLE outpatients ADD COLUMN referred_by TEXT DEFAULT ''")
+
+    sono_cols = [col[1] for col in c.execute('PRAGMA table_info(sonography)').fetchall()]
+    if 'extra_fields_json' not in sono_cols:
+      c.execute("ALTER TABLE sonography ADD COLUMN extra_fields_json TEXT DEFAULT '{}'")
+
+    c.executescript("""
+        CREATE TABLE IF NOT EXISTS referral_doctors (
+            id TEXT PRIMARY KEY,
+            name TEXT NOT NULL,
+            specialization TEXT DEFAULT '',
+            phone TEXT DEFAULT '',
+            hospital TEXT DEFAULT '',
+            created_at TEXT DEFAULT (datetime('now', 'localtime'))
+        );
+    """)
+
+    conn.commit()
+    conn.close()
+
+# Default item templates shown when starting a new bill (fully editable by the user)
+OPD_DEFAULT_ITEMS = [
+    {"description": "Registration Charges", "amount": 0},
+    {"description": "Consultation", "amount": 0},
+    {"description": "Pathology Charges", "amount": 0},
+    {"description": "X-Ray/ECG/USG Charges", "amount": 0},
+    {"description": "Medicine Charges", "amount": 0},
+    {"description": "Service Charges", "amount": 0},
+]
+IPD_DEFAULT_ITEMS = [
+    {"description": "Bed Charges", "amount": 0},
+    {"description": "Nursing Charges", "amount": 0},
+    {"description": "OT Charges", "amount": 0},
+    {"description": "Surgeon Charges", "amount": 0},
+    {"description": "Assistant Charges", "amount": 0},
+    {"description": "Anesthetic Charges", "amount": 0},
+    {"description": "Visit Charges", "amount": 0},
+    {"description": "Pathology Charges", "amount": 0},
+    {"description": "X-Ray/ECG/USG Charges", "amount": 0},
+    {"description": "Monitor/O2 Charges", "amount": 0},
+    {"description": "Dressing Charges", "amount": 0},
+    {"description": "Medicine Charges", "amount": 0},
+    {"description": "Service Charges", "amount": 0},
+    {"description": "Registration Charges", "amount": 0},
+]
+
+def next_bill_no(c, bill_type):
+    """Atomically reserve and return the next human-friendly bill number for OPD or IPD."""
+    col = 'next_opd_no' if bill_type == 'OPD' else 'next_ipd_no'
+    row = c.execute(f"SELECT {col} FROM hospital_settings WHERE id=1").fetchone()
+    n = row[0] if row else 1
+    c.execute(f"UPDATE hospital_settings SET {col}=? WHERE id=1", (n + 1,))
+    return f"{bill_type}-{datetime.now().year}-{n:04d}"
+
+# ─── HTTP HANDLER ────────────────────────────────────────────
+class Handler(BaseHTTPRequestHandler):
+    def log_message(self, format, *args):
+        pass  # suppress default logs
+
+    def send_json(self, data, status=200):
+        body = json.dumps(data, default=str).encode()
+        self.send_response(status)
+        self.send_header('Content-Type', 'application/json')
+        self.send_header('Access-Control-Allow-Origin', '*')
+        self.send_header('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS')
+        self.send_header('Access-Control-Allow-Headers', 'Content-Type')
+        self.send_header('Content-Length', len(body))
+        self.end_headers()
+        self.wfile.write(body)
+
+    def do_OPTIONS(self):
+        self.send_response(204)
+        self.send_header('Access-Control-Allow-Origin', '*')
+        self.send_header('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS')
+        self.send_header('Access-Control-Allow-Headers', 'Content-Type')
+        self.end_headers()
+
+    def read_body(self):
+        length = int(self.headers.get('Content-Length', 0))
+        return json.loads(self.rfile.read(length)) if length else {}
+
+    def route(self, method):
+        parsed = urlparse(self.path)
+        path = parsed.path.rstrip('/')
+        parts = path.split('/')  # ['', 'api', 'resource', 'id?']
+        conn = get_db()
+        c = conn.cursor()
+
+        try:
+            # ── DOCTORS ──
+            if path == '/api/doctors':
+                if method == 'GET':
+                    rows = c.execute("SELECT * FROM doctors ORDER BY name").fetchall()
+                    self.send_json([dict(r) for r in rows])
+
+                elif method == 'POST':
+                    b = self.read_body()
+                    if not b.get('name') or not b.get('specialization'):
+                        return self.send_json({'error': 'Name and specialization required'}, 400)
+                    rid = str(uuid.uuid4())
+                    c.execute("INSERT INTO doctors (id,name,specialization,phone,email) VALUES (?,?,?,?,?)",
+                              (rid, b['name'], b['specialization'], b.get('phone',''), b.get('email','')))
+                    conn.commit()
+                    self.send_json({'id': rid, **b})
+
+            elif path.startswith('/api/doctors/') and len(parts) == 4:
+                rid = parts[3]
+                if method == 'DELETE':
+                    c.execute("DELETE FROM doctors WHERE id=?", (rid,))
+                    conn.commit()
+                    self.send_json({'success': True})
+
+            # ── REFERRAL DOCTORS ──
+            elif path == '/api/referral_doctors':
+                if method == 'GET':
+                    rows = c.execute("SELECT * FROM referral_doctors ORDER BY name").fetchall()
+                    self.send_json([dict(r) for r in rows])
+
+                elif method == 'POST':
+                    b = self.read_body()
+                    if not b.get('name'):
+                        return self.send_json({'error': 'Name required'}, 400)
+                    rid = str(uuid.uuid4())
+                    c.execute("INSERT INTO referral_doctors (id,name,specialization,phone,hospital) VALUES (?,?,?,?,?)",
+                              (rid, b['name'], b.get('specialization',''), b.get('phone',''), b.get('hospital','')))
+                    conn.commit()
+                    self.send_json({'id': rid, **b})
+
+            elif path.startswith('/api/referral_doctors/') and len(parts) == 4:
+                rid = parts[3]
+                if method == 'DELETE':
+                    c.execute("DELETE FROM referral_doctors WHERE id=?", (rid,))
+                    conn.commit()
+                    self.send_json({'success': True})
+
+            # ── OUTPATIENTS ──
+            elif path == '/api/outpatients':
+                if method == 'GET':
+                    rows = c.execute("""
+                        SELECT o.*, d.name as doctor_name, d.specialization
+                        FROM outpatients o JOIN doctors d ON o.doctor_id=d.id
+                        ORDER BY o.visit_date DESC, o.visit_time DESC
+                    """).fetchall()
+                    self.send_json([dict(r) for r in rows])
+
+                elif method == 'POST':
+                    b = self.read_body()
+                    required = ['patient_name','age','gender','phone','symptoms','doctor_id','visit_date','visit_time']
+                    if any(not b.get(k) for k in required):
+                        return self.send_json({'error': 'Required fields missing'}, 400)
+                    rid = str(uuid.uuid4())
+                    c.execute("""INSERT INTO outpatients
+                        (id,patient_name,age,gender,phone,address,symptoms,diagnosis,prescription,
+                         doctor_id,visit_date,visit_time,follow_up_date,notes,referred_by)
+                        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                        (rid, b['patient_name'], b['age'], b['gender'], b['phone'],
+                         b.get('address',''), b['symptoms'], b.get('diagnosis',''),
+                         b.get('prescription',''), b['doctor_id'], b['visit_date'],
+                         b['visit_time'], b.get('follow_up_date',''), b.get('notes',''), b.get('referred_by','')))
+                    conn.commit()
+                    self.send_json({'id': rid, **b})
+
+            elif path.startswith('/api/outpatients/') and len(parts) == 4:
+                rid = parts[3]
+                if method == 'PUT':
+                    b = self.read_body()
+                    c.execute("""UPDATE outpatients SET
+                        patient_name=?,age=?,gender=?,phone=?,address=?,symptoms=?,
+                        diagnosis=?,prescription=?,doctor_id=?,visit_date=?,visit_time=?,
+                        follow_up_date=?,notes=?,referred_by=? WHERE id=?""",
+                        (b['patient_name'],b['age'],b['gender'],b['phone'],b.get('address',''),
+                         b['symptoms'],b.get('diagnosis',''),b.get('prescription',''),
+                         b['doctor_id'],b['visit_date'],b['visit_time'],
+                         b.get('follow_up_date',''),b.get('notes',''),b.get('referred_by',''),rid))
+                    conn.commit()
+                    self.send_json({'success': True})
+                elif method == 'DELETE':
+                    c.execute("DELETE FROM outpatients WHERE id=?", (rid,))
+                    conn.commit()
+                    self.send_json({'success': True})
+
+            # ── INPATIENTS ──
+            elif path == '/api/inpatients':
+                if method == 'GET':
+                    rows = c.execute("""
+                        SELECT i.*, d.name as doctor_name, d.specialization
+                        FROM inpatients i JOIN doctors d ON i.doctor_id=d.id
+                        ORDER BY i.admission_date DESC, i.admission_time DESC
+                    """).fetchall()
+                    self.send_json([dict(r) for r in rows])
+
+                elif method == 'POST':
+                    b = self.read_body()
+                    required = ['patient_name','age','gender','phone','doctor_id','ward','bed_number','admission_date','admission_time','diagnosis']
+                    if any(not b.get(k) for k in required):
+                        return self.send_json({'error': 'Required fields missing'}, 400)
+                    rid = str(uuid.uuid4())
+                    c.execute("""INSERT INTO inpatients
+                        (id,patient_name,age,gender,phone,address,emergency_contact,emergency_phone,
+                         admission_date,admission_time,ward,bed_number,diagnosis,treatment,doctor_id,
+                         discharge_date,discharge_time,status,notes,photo_description,referred_by)
+                        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                        (rid,b['patient_name'],b['age'],b['gender'],b['phone'],
+                         b.get('address',''),b.get('emergency_contact',''),b.get('emergency_phone',''),
+                         b['admission_date'],b['admission_time'],b['ward'],b['bed_number'],
+                         b['diagnosis'],b.get('treatment',''),b['doctor_id'],
+                         b.get('discharge_date',''),b.get('discharge_time',''),
+                         b.get('status','admitted'),b.get('notes',''),b.get('photo_description',''),b.get('referred_by','')))
+                    conn.commit()
+                    self.send_json({'id': rid, **b})
+
+            elif path.startswith('/api/inpatients/') and len(parts) == 4:
+                rid = parts[3]
+                if method == 'PUT':
+                    b = self.read_body()
+                    c.execute("""UPDATE inpatients SET
+                        patient_name=?,age=?,gender=?,phone=?,address=?,
+                        emergency_contact=?,emergency_phone=?,admission_date=?,admission_time=?,
+                        ward=?,bed_number=?,diagnosis=?,treatment=?,doctor_id=?,
+                        discharge_date=?,discharge_time=?,status=?,notes=?,photo_description=?,referred_by=? WHERE id=?""",
+                        (b['patient_name'],b['age'],b['gender'],b['phone'],b.get('address',''),
+                         b.get('emergency_contact',''),b.get('emergency_phone',''),
+                         b['admission_date'],b['admission_time'],b['ward'],b['bed_number'],
+                         b['diagnosis'],b.get('treatment',''),b['doctor_id'],
+                         b.get('discharge_date',''),b.get('discharge_time',''),
+                         b.get('status','admitted'),b.get('notes',''),b.get('photo_description',''),b.get('referred_by',''),rid))
+                    conn.commit()
+                    self.send_json({'success': True})
+                elif method == 'DELETE':
+                    c.execute("DELETE FROM inpatients WHERE id=?", (rid,))
+                    conn.commit()
+                    self.send_json({'success': True})
+
+            # ── HOSPITAL SETTINGS ──
+            elif path == '/api/settings':
+                if method == 'GET':
+                    row = c.execute("SELECT * FROM hospital_settings WHERE id=1").fetchone()
+                    self.send_json(dict(row) if row else {})
+                elif method == 'PUT':
+                    b = self.read_body()
+                    c.execute("""UPDATE hospital_settings SET
+                        hospital_name=?, tagline=?, address=?, phone=?, reg_no=?, logo_data=?
+                        WHERE id=1""",
+                        (b.get('hospital_name','MediCare HMS'), b.get('tagline',''),
+                         b.get('address',''), b.get('phone',''), b.get('reg_no',''),
+                         b.get('logo_data','')))
+                    conn.commit()
+                    row = c.execute("SELECT * FROM hospital_settings WHERE id=1").fetchone()
+                    self.send_json(dict(row))
+
+            # ── BILL ITEM TEMPLATES ──
+            elif path == '/api/bill-templates':
+                self.send_json({'OPD': OPD_DEFAULT_ITEMS, 'IPD': IPD_DEFAULT_ITEMS})
+
+            # ── BILLS ──
+            elif path == '/api/bills':
+                if method == 'GET':
+                    q = parse_qs(parsed.query)
+                    sql = """SELECT b.*, d.name as doctor_name, d.specialization
+                              FROM bills b JOIN doctors d ON b.doctor_id=d.id WHERE 1=1"""
+                    args = []
+                    if q.get('type'):
+                        sql += " AND b.bill_type=?"; args.append(q['type'][0])
+                    if q.get('doctor_id'):
+                        sql += " AND b.doctor_id=?"; args.append(q['doctor_id'][0])
+                    if q.get('date_from'):
+                        sql += " AND b.bill_date>=?"; args.append(q['date_from'][0])
+                    if q.get('date_to'):
+                        sql += " AND b.bill_date<=?"; args.append(q['date_to'][0])
+                    if q.get('search'):
+                        sql += " AND (b.patient_name LIKE ? OR b.bill_no LIKE ?)"
+                        term = f"%{q['search'][0]}%"; args += [term, term]
+                    sql += " ORDER BY b.bill_date DESC, b.created_at DESC"
+                    rows = c.execute(sql, args).fetchall()
+                    self.send_json([dict(r) for r in rows])
+
+                elif method == 'POST':
+                    b = self.read_body()
+                    required = ['bill_type','bill_date','patient_name','doctor_id','items']
+                    if any(not b.get(k) for k in required):
+                        return self.send_json({'error': 'Required fields missing'}, 400)
+                    if b['bill_type'] not in ('OPD','IPD'):
+                        return self.send_json({'error': 'Invalid bill type'}, 400)
+                    if b.get('payment_mode') == 'online' and not b.get('utr_code'):
+                        return self.send_json({'error': 'UTR / transaction code required for online payment'}, 400)
+                    items = b['items']
+                    total = sum(float(it.get('amount') or 0) for it in items)
+                    rid = str(uuid.uuid4())
+                    bill_no = next_bill_no(c, b['bill_type'])
+                    c.execute("""INSERT INTO bills
+                        (id,bill_no,bill_type,bill_date,patient_name,age,gender,address,phone,
+                         indoor_no,admission_date,discharge_date,diagnostic,doctor_id,items_json,
+                         total,payment_mode,utr_code,outpatient_id,inpatient_id)
+                        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                        (rid, bill_no, b['bill_type'], b['bill_date'], b['patient_name'],
+                         str(b.get('age','')), b.get('gender',''), b.get('address',''),
+                         b.get('phone',''), b.get('indoor_no',''), b.get('admission_date',''),
+                         b.get('discharge_date',''), b.get('diagnostic',''), b['doctor_id'],
+                         json.dumps(items), total, b.get('payment_mode','cash'),
+                         b.get('utr_code',''), b.get('outpatient_id',''), b.get('inpatient_id','')))
+                    conn.commit()
+                    row = c.execute("""SELECT b.*, d.name as doctor_name, d.specialization
+                                        FROM bills b JOIN doctors d ON b.doctor_id=d.id
+                                        WHERE b.id=?""", (rid,)).fetchone()
+                    self.send_json(dict(row))
+
+            elif path.startswith('/api/bills/') and len(parts) == 4:
+                rid = parts[3]
+                if method == 'GET':
+                    row = c.execute("""SELECT b.*, d.name as doctor_name, d.specialization
+                                        FROM bills b JOIN doctors d ON b.doctor_id=d.id
+                                        WHERE b.id=?""", (rid,)).fetchone()
+                    self.send_json(dict(row) if row else {'error':'Not found'}, 200 if row else 404)
+                elif method == 'DELETE':
+                    c.execute("DELETE FROM bills WHERE id=?", (rid,))
+                    conn.commit()
+                    self.send_json({'success': True})
+
+            # ── SONOGRAPHY (Form F) ──
+            elif path == '/api/sonography':
+                if method == 'GET':
+                    q = parse_qs(parsed.query)
+                    sql = """SELECT s.*, d.name as doctor_name
+                              FROM sonography s LEFT JOIN doctors d ON s.doctor_id=d.id WHERE 1=1"""
+                    args = []
+                    if q.get('date_from'):
+                        sql += " AND s.entry_date>=?"; args.append(q['date_from'][0])
+                    if q.get('date_to'):
+                        sql += " AND s.entry_date<=?"; args.append(q['date_to'][0])
+                    if q.get('search'):
+                        sql += " AND (s.patient_name LIKE ? OR s.entry_no LIKE ?)"
+                        term = f"%{q['search'][0]}%"; args += [term, term]
+                    sql += " ORDER BY s.entry_date DESC, s.created_at DESC"
+                    rows = c.execute(sql, args).fetchall()
+                    self.send_json([dict(r) for r in rows])
+
+                elif method == 'POST':
+                    b = self.read_body()
+                    required = ['entry_date','patient_name']
+                    if any(not b.get(k) for k in required):
+                        return self.send_json({'error': 'Required fields missing'}, 400)
+                    rid = str(uuid.uuid4())
+                    seq = c.execute("SELECT COUNT(*) FROM sonography").fetchone()[0] + 1
+                    entry_no = f"SONO-{datetime.now().year}-{seq:04d}"
+                    c.execute("""INSERT INTO sonography
+                        (id,entry_no,entry_date,patient_name,age,husband_father_name,address,contact,
+                         living_sons,living_daughters,referred_by,lmp,indications,procedure_done,
+                         doctor_id,procedure_date,result_notes,declaration_no_sex_disclosed,extra_fields_json)
+                        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                        (rid, entry_no, b['entry_date'], b['patient_name'], str(b.get('age','')),
+                         b.get('husband_father_name',''), b.get('address',''), b.get('contact',''),
+                         b.get('living_sons',''), b.get('living_daughters',''), b.get('referred_by',''),
+                         b.get('lmp',''), json.dumps(b.get('indications',[])),
+                         b.get('procedure_done','Ultrasound'), b.get('doctor_id',''),
+                         b.get('procedure_date',''), b.get('result_notes',''),
+                         1 if b.get('declaration_no_sex_disclosed', True) else 0,
+                         json.dumps(b.get('extra_fields', {}))))
+                    conn.commit()
+                    row = c.execute("""SELECT s.*, d.name as doctor_name
+                                        FROM sonography s LEFT JOIN doctors d ON s.doctor_id=d.id
+                                        WHERE s.id=?""", (rid,)).fetchone()
+                    self.send_json(dict(row))
+
+            elif path.startswith('/api/sonography/') and len(parts) == 4:
+                rid = parts[3]
+                if method == 'GET':
+                    row = c.execute("""SELECT s.*, d.name as doctor_name
+                                        FROM sonography s LEFT JOIN doctors d ON s.doctor_id=d.id
+                                        WHERE s.id=?""", (rid,)).fetchone()
+                    self.send_json(dict(row) if row else {'error':'Not found'}, 200 if row else 404)
+                elif method == 'DELETE':
+                    c.execute("DELETE FROM sonography WHERE id=?", (rid,))
+                    conn.commit()
+                    self.send_json({'success': True})
+
+            # ── STATS ──
+            elif path == '/api/stats':
+                total_out     = c.execute("SELECT COUNT(*) FROM outpatients").fetchone()[0]
+                total_in      = c.execute("SELECT COUNT(*) FROM inpatients").fetchone()[0]
+                admitted      = c.execute("SELECT COUNT(*) FROM inpatients WHERE status='admitted'").fetchone()[0]
+                total_docs    = c.execute("SELECT COUNT(*) FROM doctors").fetchone()[0]
+                self.send_json({'totalOutpatients': total_out, 'totalInpatients': total_in,
+                                'currentlyAdmitted': admitted, 'totalDoctors': total_docs})
+            else:
+                self.send_json({'error': 'Not found'}, 404)
+
+        except Exception as e:
+            self.send_json({'error': str(e)}, 500)
+        finally:
+            conn.close()
+
+    def do_GET(self):    self.route('GET')
+    def do_POST(self):   self.route('POST')
+    def do_PUT(self):    self.route('PUT')
+    def do_DELETE(self): self.route('DELETE')
+
+
+if __name__ == '__main__':
+    init_db()
+    PORT = 5000
+    server = HTTPServer(('0.0.0.0', PORT), Handler)
+    print(f"[OK] MediCare HMS Server running at http://localhost:{PORT}")
+    print("   Press Ctrl+C to stop.")
+    try:
+        server.serve_forever()
+    except KeyboardInterrupt:
+        print("\n[STOP] Server stopped.")
