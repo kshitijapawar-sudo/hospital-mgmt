@@ -1,23 +1,9 @@
-# Python
+backend/hospital.db
+*.db
+*.log
+auto_update.log
 __pycache__/
-*.py[cod]
-*$py.class
-*.so
-.Python
-env/
-venv/
-ENV/
-env.bak/
-venv.bak/
+*.pyc
+node_modules/
 .env
 
-# Distribution / Zip
-*.zip
-
-# Database
-# hospital.db
-
-# Logs & temp
-*.log
-.vscode/
-.idea/

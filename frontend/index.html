@@ -532,7 +532,8 @@
       border: 1px solid var(--border);
       border-radius: var(--radius-lg);
       box-shadow: var(--shadow-sm);
-      overflow: hidden;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
     }
 
     .table-toolbar {
@@ -744,18 +745,178 @@
       color: var(--text-muted);
     }
 
-    /* Responsive */
+    /* ── MOBILE MENU & BACKDROP ── */
+    .mobile-menu-btn {
+      display: none;
+      background: none;
+      border: none;
+      color: var(--white);
+      padding: 6px;
+      border-radius: 6px;
+      cursor: pointer;
+      align-items: center;
+      justify-content: center;
+    }
+    .mobile-menu-btn:hover {
+      background: rgba(255,255,255,0.1);
+    }
+    .sidebar-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 31, 61, 0.6);
+      backdrop-filter: blur(2px);
+      z-index: 140;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s ease;
+    }
+    .sidebar-backdrop.open {
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    /* ── RESPONSIVE MEDIA QUERIES ── */
     @media (max-width: 900px) {
       .stats-grid {
         grid-template-columns: repeat(2, 1fr);
       }
-
       .doctor-grid {
         grid-template-columns: repeat(2, 1fr);
       }
-
       .form-grid.cols-3 {
         grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .mobile-menu-btn {
+        display: flex;
+      }
+      header {
+        padding: 0 14px;
+        height: 56px;
+      }
+      .logo-text h1 {
+        font-size: 15px;
+      }
+      .logo-text span {
+        display: none;
+      }
+      .clock {
+        font-size: 10px;
+      }
+      .clock strong {
+        font-size: 13px;
+      }
+      #user-name-display {
+        display: none;
+      }
+
+      /* Slide-over Sidebar Drawer */
+      .main-container {
+        flex-direction: column;
+        min-height: calc(100vh - 56px);
+      }
+      .sidebar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        width: 260px;
+        z-index: 150;
+        box-shadow: var(--shadow-lg);
+        transform: translateX(-100%);
+        transition: transform 0.25s ease-in-out;
+        overflow-y: auto;
+      }
+      .sidebar.open {
+        transform: translateX(0);
+      }
+
+      .content {
+        padding: 16px 14px;
+      }
+
+      /* Page headers */
+      .page-title {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+      }
+      .page-title .btn {
+        width: 100%;
+        justify-content: center;
+      }
+
+      /* Table toolbars & Search */
+      .table-toolbar {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .search-input {
+        max-width: 100%;
+      }
+
+      /* Modals on Mobile */
+      .modal {
+        width: 96%;
+        max-height: 94vh;
+        margin: 10px auto;
+        border-radius: var(--radius-lg);
+      }
+      .modal-body {
+        padding: 16px;
+      }
+      .modal-header {
+        padding: 14px 16px;
+      }
+      .modal-footer {
+        padding: 12px 16px;
+        flex-wrap: wrap;
+      }
+      .modal-footer .btn {
+        flex: 1;
+        justify-content: center;
+      }
+
+      /* Tab Header */
+      .tab-header {
+        overflow-x: auto;
+        white-space: nowrap;
+        -webkit-overflow-scrolling: touch;
+      }
+      .tab-btn {
+        padding: 8px 14px;
+        font-size: 13px;
+      }
+    }
+
+    @media (max-width: 576px) {
+      .stats-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+      }
+      .stat-card .value {
+        font-size: 26px;
+      }
+      .doctor-grid {
+        grid-template-columns: 1fr;
+      }
+      .form-grid, .form-grid.cols-3 {
+        grid-template-columns: 1fr;
+      }
+      .form-group input,
+      .form-group select,
+      .form-group textarea {
+        font-size: 14px;
+        padding: 10px 12px;
+      }
+      .actions-cell {
+        flex-direction: column;
+        gap: 4px;
+      }
+      .type-toggle {
+        flex-direction: column;
       }
     }
 
@@ -1157,22 +1318,67 @@
     }
 
     @media print {
-      body * {
-        visibility: hidden;
+      body > * {
+        display: none !important;
       }
 
-      #receipt-doc,
-      #receipt-doc * {
-        visibility: visible;
+      body > #modal-receipt {
+        display: block !important;
+        position: static !important;
+        inset: auto !important;
+        width: 100% !important;
+        height: auto !important;
+        max-height: none !important;
+        overflow: visible !important;
+        background: transparent !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        border: none !important;
+        box-shadow: none !important;
+        transform: none !important;
+      }
+
+      #modal-receipt .modal-header,
+      #modal-receipt .modal-footer,
+      #modal-receipt .modal-close {
+        display: none !important;
+      }
+
+      #modal-receipt .modal {
+        display: block !important;
+        position: static !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        height: auto !important;
+        max-height: none !important;
+        overflow: visible !important;
+        background: transparent !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        border: none !important;
+        box-shadow: none !important;
+        transform: none !important;
+      }
+
+      #receipt-frame-wrap {
+        display: block !important;
+        position: static !important;
+        width: 100% !important;
+        background: transparent !important;
+        padding: 0 !important;
+        margin: 0 !important;
       }
 
       #receipt-doc {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        box-shadow: none;
-        margin: 0;
+        display: block !important;
+        position: static !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        box-shadow: none !important;
+        border: none !important;
+        background: #fff !important;
       }
     }
   </style>
@@ -1180,23 +1386,94 @@
 
 <body>
 
-  <header>
-    <div class="logo">
-      <div class="logo-icon" id="hdr-logo">
-        <img src="logo.jpg" style="width:100%;height:100%;object-fit:contain;border-radius:8px" />
+  <!-- ═══ LOGIN MODAL OVERLAY ═══ -->
+  <div id="login-overlay" style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(15,31,61,0.92);backdrop-filter:blur(8px);z-index:9999;display:flex;align-items:center;justify-content:center;">
+    <div style="background:#ffffff;border-radius:16px;box-shadow:0 20px 50px rgba(0,0,0,0.3);width:92%;max-width:440px;padding:36px 32px;text-align:center;">
+      <div style="width:56px;height:56px;background:var(--teal);border-radius:14px;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" style="width:30px;height:30px;">
+          <path d="M19 21v-2a4 4 0 00-4-4H9a4 4 0 00-4 4v2"/>
+          <circle cx="12" cy="7" r="4"/>
+        </svg>
       </div>
-      <div class="logo-text">
-        <h1 id="hdr-hname">Male Hospital</h1>
-        <span id="hdr-htag">Hospital Management System</span>
+      <h2 style="font-family:'Playfair Display',serif;color:var(--navy);font-size:24px;font-weight:700;margin-bottom:4px;">Maale Hospital</h2>
+      <p style="color:var(--text-muted);font-size:13px;margin-bottom:20px;">Sign in to access your portal</p>
+      
+      <!-- Quick Presets -->
+      <div style="display:flex;gap:6px;margin-bottom:18px;">
+        <button type="button" onclick="presetLogin('doctor')" style="flex:1;padding:8px 4px;border:1px solid var(--border);border-radius:8px;background:var(--snow);font-size:11.5px;font-weight:600;color:var(--navy);cursor:pointer;transition:all 0.15s;">
+          👨‍⚕️ Doctor
+        </button>
+        <button type="button" onclick="presetLogin('operator')" style="flex:1;padding:8px 4px;border:1px solid var(--border);border-radius:8px;background:var(--snow);font-size:11.5px;font-weight:600;color:var(--navy);cursor:pointer;transition:all 0.15s;">
+          💻 Operator
+        </button>
+        <button type="button" onclick="presetLogin('receptionist')" style="flex:1;padding:8px 4px;border:1px solid var(--border);border-radius:8px;background:var(--snow);font-size:11.5px;font-weight:600;color:var(--navy);cursor:pointer;transition:all 0.15s;">
+          📋 Receptionist
+        </button>
+      </div>
+
+      <form onsubmit="handleLogin(event)" autocomplete="off" style="text-align:left;">
+        <div id="login-error" style="display:none;background:#FDE8E8;color:#C0392B;padding:10px 14px;border-radius:8px;font-size:12.5px;margin-bottom:14px;border:1px solid #F5C6CB;"></div>
+        <div class="form-group" style="margin-bottom:14px;">
+          <label style="display:block;font-size:12px;font-weight:600;color:var(--slate);margin-bottom:6px;">Username</label>
+          <input type="text" id="login-username" required placeholder="doctor / operator / receptionist" autocomplete="off" style="width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:8px;font-size:13.5px;" />
+        </div>
+        <div class="form-group" style="margin-bottom:20px;">
+          <label style="display:block;font-size:12px;font-weight:600;color:var(--slate);margin-bottom:6px;">Password</label>
+          <div style="position:relative;">
+            <input type="password" id="login-password" required placeholder="Enter password" autocomplete="new-password" style="width:100%;padding:10px 40px 10px 12px;border:1px solid var(--border);border-radius:8px;font-size:13.5px;" />
+            <button type="button" onclick="togglePasswordVisibility('login-password', this)" title="Show/Hide Password" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--slate);font-size:15px;padding:4px;display:flex;align-items:center;">
+              👁️
+            </button>
+          </div>
+        </div>
+        <button type="submit" class="btn btn-primary" style="width:100%;padding:12px;border-radius:8px;font-size:14px;font-weight:600;justify-content:center;background:var(--navy);cursor:pointer;">
+          Sign In
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <header>
+    <div style="display:flex;align-items:center;gap:12px;">
+      <button class="mobile-menu-btn" id="mobile-menu-btn" onclick="toggleMobileSidebar()" aria-label="Toggle Menu">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:24px;height:24px;">
+          <line x1="3" y1="12" x2="21" y2="12"></line>
+          <line x1="3" y1="6" x2="21" y2="6"></line>
+          <line x1="3" y1="18" x2="21" y2="18"></line>
+        </svg>
+      </button>
+      <div class="logo">
+        <div class="logo-icon" id="hdr-logo">
+          <img src="logo.jpg" style="width:100%;height:100%;object-fit:contain;border-radius:8px" />
+        </div>
+        <div class="logo-text">
+          <h1 id="hdr-hname">Male Hospital</h1>
+          <span id="hdr-htag">Hospital Management System</span>
+        </div>
       </div>
     </div>
     <div class="header-right">
+      <div id="user-badge" style="display:none;align-items:center;gap:12px;background:rgba(255,255,255,0.12);padding:6px 14px;border-radius:20px;border:1px solid rgba(255,255,255,0.18);">
+        <div style="text-align:right;">
+          <div id="user-name-display" style="font-weight:600;font-size:13px;color:white;">User</div>
+          <span id="user-role-badge" style="font-size:9.5px;text-transform:uppercase;padding:2px 8px;border-radius:10px;background:var(--teal);color:white;font-weight:700;letter-spacing:0.5px;">DOCTOR</span>
+        </div>
+        <button onclick="handleLogout()" title="Logout" style="background:rgba(255,255,255,0.15);border:none;color:white;border-radius:50%;width:28px;height:28px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.15s;" onmouseover="this.style.background='var(--danger)'" onmouseout="this.style.background='rgba(255,255,255,0.15)'">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;">
+            <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/>
+            <polyline points="16 17 21 12 16 7"/>
+            <line x1="21" y1="12" x2="9" y2="12"/>
+          </svg>
+        </button>
+      </div>
       <div class="clock">
         <strong id="hdr-time">--:--:--</strong>
         <span id="hdr-date">Loading...</span>
       </div>
     </div>
   </header>
+
+  <div id="sidebar-backdrop" class="sidebar-backdrop" onclick="closeMobileSidebar()"></div>
 
   <div class="main-container">
     <!-- SIDEBAR -->
@@ -1498,12 +1775,13 @@
               </div>
               <div class="form-group">
                 <label>Gender</label>
-                <select id="bill-gender">
+                <select id="bill-gender" onchange="toggleSelectOther(this, 'bill-gender-other')">
                   <option value="">Select gender</option>
                   <option>Male</option>
                   <option>Female</option>
                   <option>Other</option>
                 </select>
+                <input type="text" id="bill-gender-other" placeholder="Specify gender" style="display:none;margin-top:6px;padding:6px 10px;font-size:13px;border:1px solid var(--border);border-radius:6px;width:100%" />
               </div>
               <div class="form-group">
                 <label>Phone</label>
@@ -1744,10 +2022,12 @@
               </div>
               <div class="form-group" id="sono-ref-doc-wrap">
                 <label>7(a) Referred By (Full Name &amp; Address of Doctor/Genetic Counseling Centre)</label>
-                <select id="sono-referred">
+                <select id="sono-referred" onchange="toggleSelectOther(this, 'sono-referred-other')">
                   <option value="">Select referral doctor</option>
                   <option value="Self / Walk-in">Self / Walk-in</option>
+                  <option value="Other">Other (specify)</option>
                 </select>
+                <input type="text" id="sono-referred-other" placeholder="Specify referring doctor / hospital" style="display:none;margin-top:6px;padding:6px 10px;font-size:13px;border:1px solid var(--border);border-radius:6px;width:100%" />
                 <small style="color:var(--text-muted);font-size:11px">(Referral slips to be preserved carefully with Form F)</small>
               </div>
               <div class="form-group" id="sono-self-ref-wrap" style="display:none">
@@ -1803,7 +2083,7 @@
                 </select>
                 <small style="color:var(--text-muted);font-size:10.5px;margin-top:4px;display:block">(Important Note: Ultrasound is not indicated/advised/performed to determine the sex of foetus except for diagnosis of sex-linked diseases such as Duchenne Muscular Dystrophy, Hemophilia A&amp;B etc.)</small>
               </div>
-              <div class="form-group">
+              <div class="form-group" id="sono-other-proc-wrap" style="display:none">
                 <label>If Any Other (specify)</label>
                 <input type="text" id="sono-other-proc" placeholder="Specify other non-invasive procedure" />
               </div>
@@ -2031,12 +2311,13 @@
                 </div>
                 <div class="form-group">
                   <label>Sex</label>
-                  <select id="sono-decl-id-sex">
+                  <select id="sono-decl-id-sex" onchange="toggleSelectOther(this, 'sono-decl-id-sex-other')">
                     <option value="">Select sex</option>
                     <option>Male</option>
                     <option>Female</option>
                     <option>Other</option>
                   </select>
+                  <input type="text" id="sono-decl-id-sex-other" placeholder="Specify sex/gender" style="display:none;margin-top:6px;padding:6px 10px;font-size:13px;border:1px solid var(--border);border-radius:6px;width:100%" />
                 </div>
                 <div class="form-group">
                   <label>Relation (if any)</label>
@@ -2192,6 +2473,31 @@
             <button class="btn btn-primary" onclick="saveSettings()">Save Settings</button>
           </div>
         </div>
+
+        <!-- User Password Management Card (Doctor Only) -->
+        <div class="settings-card" id="user-password-card" style="margin-top:24px;display:none;">
+          <h3 style="color:var(--navy);font-size:16px;font-weight:700;margin-bottom:6px;">🔐 User Password Management</h3>
+          <p style="color:var(--text-muted);font-size:12.5px;margin-bottom:18px;">As a Doctor, you can change the password for any user account (Doctor, Operator, or Receptionist).</p>
+          
+          <div class="form-grid">
+            <div class="form-group full">
+              <label>Select Account <span class="req">*</span></label>
+              <select id="pwd-user-select" style="width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:8px;font-size:13.5px;"></select>
+            </div>
+            <div class="form-group full">
+              <label>New Password <span class="req">*</span></label>
+              <div style="position:relative;">
+                <input type="password" id="pwd-new-password" placeholder="Enter new password" style="width:100%;padding:10px 40px 10px 12px;border:1px solid var(--border);border-radius:8px;font-size:13.5px;" />
+                <button type="button" onclick="togglePasswordVisibility('pwd-new-password', this)" title="Show/Hide Password" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--slate);font-size:15px;padding:4px;display:flex;align-items:center;">
+                  👁️
+                </button>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer" style="border-top:1px solid var(--border);padding:16px 0;margin-top:16px">
+            <button class="btn btn-primary" onclick="updateUserPassword()">Update Password</button>
+          </div>
+        </div>
       </div>
 
     </main>
@@ -2229,12 +2535,13 @@
             </div>
             <div class="form-group">
               <label>Gender <span class="req">*</span></label>
-              <select id="out-gender">
+              <select id="out-gender" onchange="toggleSelectOther(this, 'out-gender-other')">
                 <option value="">Select gender</option>
                 <option>Male</option>
                 <option>Female</option>
                 <option>Other</option>
               </select>
+              <input type="text" id="out-gender-other" placeholder="Specify gender" style="display:none;margin-top:6px;padding:6px 10px;font-size:13px;border:1px solid var(--border);border-radius:6px;width:100%" />
             </div>
             <div class="form-group">
               <label>Phone <span class="req">*</span></label>
@@ -2256,10 +2563,12 @@
             </div>
             <div class="form-group">
               <label>Referred By</label>
-              <select id="out-referred">
+              <select id="out-referred" onchange="toggleSelectOther(this, 'out-referred-other')">
                 <option value="">Select referral doctor</option>
                 <option value="Self / Walk-in">Self / Walk-in</option>
+                <option value="Other">Other (specify)</option>
               </select>
+              <input type="text" id="out-referred-other" placeholder="Specify referring doctor / hospital" style="display:none;margin-top:6px;padding:6px 10px;font-size:13px;border:1px solid var(--border);border-radius:6px;width:100%" />
             </div>
             <div class="form-group">
               <label>Visit Date <span class="req">*</span></label>
@@ -2294,7 +2603,8 @@
       </div>
       <div class="modal-footer">
         <button class="btn btn-secondary" onclick="closeModal('modal-outpatient')">Cancel</button>
-        <button class="btn btn-primary" onclick="saveOutpatient()">Save Visit Record</button>
+        <button class="btn btn-secondary" onclick="saveOutpatient(false)">Save Only</button>
+        <button class="btn btn-primary" onclick="saveOutpatient(true)">🖨️ Save & Print OPD Slip</button>
       </div>
     </div>
   </div>
@@ -2330,12 +2640,13 @@
             </div>
             <div class="form-group">
               <label>Gender <span class="req">*</span></label>
-              <select id="in-gender">
+              <select id="in-gender" onchange="toggleSelectOther(this, 'in-gender-other')">
                 <option value="">Select gender</option>
                 <option>Male</option>
                 <option>Female</option>
                 <option>Other</option>
               </select>
+              <input type="text" id="in-gender-other" placeholder="Specify gender" style="display:none;margin-top:6px;padding:6px 10px;font-size:13px;border:1px solid var(--border);border-radius:6px;width:100%" />
             </div>
             <div class="form-group">
               <label>Phone <span class="req">*</span></label>
@@ -2365,14 +2676,16 @@
             </div>
             <div class="form-group">
               <label>Referred By</label>
-              <select id="in-referred">
+              <select id="in-referred" onchange="toggleSelectOther(this, 'in-referred-other')">
                 <option value="">Select referral doctor</option>
                 <option value="Self / Walk-in">Self / Walk-in</option>
+                <option value="Other">Other (specify)</option>
               </select>
+              <input type="text" id="in-referred-other" placeholder="Specify referring doctor / hospital" style="display:none;margin-top:6px;padding:6px 10px;font-size:13px;border:1px solid var(--border);border-radius:6px;width:100%" />
             </div>
             <div class="form-group">
               <label>Ward <span class="req">*</span></label>
-              <select id="in-ward">
+              <select id="in-ward" onchange="toggleSelectOther(this, 'in-ward-other')">
                 <option value="">Select ward</option>
                 <option>General Ward</option>
                 <option>Private Ward</option>
@@ -2383,7 +2696,9 @@
                 <option>Surgical Ward</option>
                 <option>Orthopedic Ward</option>
                 <option>Neurology Ward</option>
+                <option value="Other">Other</option>
               </select>
+              <input type="text" id="in-ward-other" placeholder="Specify ward name" style="display:none;margin-top:6px;padding:6px 10px;font-size:13px;border:1px solid var(--border);border-radius:6px;width:100%" />
             </div>
             <div class="form-group">
               <label>Bed Number <span class="req">*</span></label>
@@ -2433,7 +2748,8 @@
       </div>
       <div class="modal-footer">
         <button class="btn btn-secondary" onclick="closeModal('modal-inpatient')">Cancel</button>
-        <button class="btn btn-primary" onclick="saveInpatient()">Save Admission</button>
+        <button class="btn btn-secondary" onclick="saveInpatient(false)">Save Only</button>
+        <button class="btn btn-primary" onclick="saveInpatient(true)">🖨️ Save & Print Admission Slip</button>
       </div>
     </div>
   </div>
@@ -2461,7 +2777,7 @@
           </div>
           <div class="form-group full">
             <label>Specialization <span class="req">*</span></label>
-            <select id="doc-spec">
+            <select id="doc-spec" onchange="toggleSelectOther(this, 'doc-spec-other')">
               <option value="">Select specialization</option>
               <option>General Physician</option>
               <option>Cardiologist</option>
@@ -2479,8 +2795,9 @@
               <option>Nephrologist</option>
               <option>Gastroenterologist</option>
               <option>Pulmonologist</option>
-              <option>Other</option>
+              <option value="Other">Other</option>
             </select>
+            <input type="text" id="doc-spec-other" placeholder="Specify specialization" style="display:none;margin-top:6px;padding:6px 10px;font-size:13px;border:1px solid var(--border);border-radius:6px;width:100%" />
           </div>
           <div class="form-group">
             <label>Phone</label>
@@ -2577,7 +2894,22 @@
   <div class="toast" id="toast"></div>
 
   <script>
-    const API = 'http://localhost:5000/api';
+    const host = window.location.hostname || 'localhost';
+    const API = `http://${host}:5000/api`;
+
+    function toggleMobileSidebar() {
+      const sidebar = document.querySelector('.sidebar');
+      const backdrop = document.getElementById('sidebar-backdrop');
+      if (sidebar) sidebar.classList.toggle('open');
+      if (backdrop) backdrop.classList.toggle('open');
+    }
+    function closeMobileSidebar() {
+      const sidebar = document.querySelector('.sidebar');
+      const backdrop = document.getElementById('sidebar-backdrop');
+      if (sidebar) sidebar.classList.remove('open');
+      if (backdrop) backdrop.classList.remove('open');
+    }
+
     let outpatients = [], inpatients = [], doctors = [], referralDoctors = [];
     let outFilter = '', inFilter = '';
     let hospitalSettings = {};
@@ -2631,7 +2963,10 @@
     }
 
     // ── SECTION NAV ──
+    let currentSection = 'dashboard';
     function showSection(name) {
+      currentSection = name;
+      closeMobileSidebar();
       document.querySelectorAll('.section-pane').forEach(p => p.style.display = 'none');
       document.getElementById('section-' + name).style.display = 'block';
       document.querySelectorAll('.nav-item').forEach(n => {
@@ -2644,6 +2979,58 @@
       if (name === 'sonography') { loadSonoRecords(); }
       if (name === 'settings') { loadSettingsForm(); }
     }
+
+    // ── LIVE SYNC ──────────────────────────────────────────────
+    // Quietly re-fetches whatever list is on screen every few seconds, so a
+    // bill/patient/entry the receptionist just saved shows up on the doctor's
+    // screen (and vice versa) without anyone pressing refresh.
+    function anyModalOpen() {
+      return !!document.querySelector('.modal-overlay.open');
+    }
+    async function silentRefresh() {
+      if (!currentUser) return;                 // not logged in yet
+      if (anyModalOpen()) return;                // don't yank data out from under an open edit form
+      try {
+        if (currentSection === 'dashboard') {
+          loadDashboard();
+        } else if (currentSection === 'patients') {
+          await loadOutpatients();
+          await loadInpatients();
+        } else if (currentSection === 'billing') {
+          await loadBills();
+        } else if (currentSection === 'sonography') {
+          await loadSonoRecords();
+        } else if (currentSection === 'doctors') {
+          await loadDoctors();
+        }
+      } catch (e) {
+        // Silent — a brief Wi-Fi hiccup shouldn't spam a toast every few seconds.
+      }
+    }
+    setInterval(silentRefresh, 6000);
+
+    // ── AUTO-UPDATE DETECTION ─────────────────────────────────
+    // When the developer pushes new code and the server PC restarts with it,
+    // SERVER_VERSION changes. Every open browser (doctor's laptop, receptionist's
+    // PC) notices within a minute and reloads itself to pick up the new version —
+    // no one has to manually refresh or reinstall anything.
+    let appVersion = null;
+    async function checkForAppUpdate() {
+      try {
+        const r = await fetch(API + '/version');
+        const data = await r.json();
+        if (appVersion === null) {
+          appVersion = data.version;
+        } else if (data.version !== appVersion && !anyModalOpen()) {
+          showToast('Updating to the latest version…', 'success');
+          setTimeout(() => window.location.reload(), 1200);
+        }
+      } catch (e) {
+        // Server may be restarting mid-update — just try again next time.
+      }
+    }
+    setInterval(checkForAppUpdate, 60000);
+    checkForAppUpdate();
 
     // ── TAB ──
     function switchTab(tab) {
@@ -2709,19 +3096,66 @@
       document.getElementById('bill-filter-doctor').innerHTML = '<option value="">All Doctors</option>' + opts;
     }
 
+    // Helper functions for select + 'Other' custom text inputs
+    function toggleSelectOther(selectEl, otherInputId) {
+      const inp = document.getElementById(otherInputId);
+      if (!inp) return;
+      if (selectEl.value === 'Other') {
+        inp.style.display = 'block';
+        inp.focus();
+      } else {
+        inp.style.display = 'none';
+        inp.value = '';
+      }
+    }
+
+    function getSelectVal(selectId, otherInputId) {
+      const sel = document.getElementById(selectId);
+      if (!sel) return '';
+      if (sel.value === 'Other') {
+        const inp = document.getElementById(otherInputId);
+        const customVal = inp ? inp.value.trim() : '';
+        return customVal ? customVal : 'Other';
+      }
+      return sel.value;
+    }
+
+    function setSelectVal(selectId, otherInputId, value) {
+      const sel = document.getElementById(selectId);
+      const inp = document.getElementById(otherInputId);
+      if (!sel) return;
+      if (!value) {
+        sel.value = '';
+        if (inp) { inp.value = ''; inp.style.display = 'none'; }
+        return;
+      }
+      const optionValues = Array.from(sel.options).map(o => o.value);
+      if (optionValues.includes(value)) {
+        sel.value = value;
+        if (inp) { inp.value = ''; inp.style.display = 'none'; }
+      } else {
+        sel.value = 'Other';
+        if (inp) {
+          inp.value = value;
+          inp.style.display = 'block';
+        }
+      }
+    }
+
     function populateReferralDoctorDropdowns() {
       const opts = referralDoctors.map(d => `<option value="${d.id}">${d.name}${d.specialization ? ' — ' + d.specialization : ''}</option>`).join('');
       const defaultOpt = '<option value="">Select referral doctor</option>';
       const selfOpt = '<option value="Self / Walk-in">Self / Walk-in</option>';
+      const otherOpt = '<option value="Other">Other (specify)</option>';
 
       const outRef = document.getElementById('out-referred');
-      if (outRef) outRef.innerHTML = defaultOpt + selfOpt + opts;
+      if (outRef) outRef.innerHTML = defaultOpt + selfOpt + opts + otherOpt;
 
       const inRef = document.getElementById('in-referred');
-      if (inRef) inRef.innerHTML = defaultOpt + selfOpt + opts;
+      if (inRef) inRef.innerHTML = defaultOpt + selfOpt + opts + otherOpt;
 
       const sonoRef = document.getElementById('sono-referred');
-      if (sonoRef) sonoRef.innerHTML = defaultOpt + selfOpt + opts;
+      if (sonoRef) sonoRef.innerHTML = defaultOpt + selfOpt + opts + otherOpt;
     }
 
     // ── DASHBOARD ──
@@ -2786,6 +3220,7 @@
       <td>${p.follow_up_date ? formatDate(p.follow_up_date) : '<span style="color:var(--text-muted)">—</span>'}</td>
       <td>
         <div class="actions-cell">
+          <button class="btn btn-secondary btn-sm" onclick="printOPDSlip(outpatients.find(x=>x.id==='${p.id}'))">🖨️ Print</button>
           <button class="btn btn-secondary btn-sm" onclick="editOutpatient('${p.id}')">Edit</button>
           <button class="btn btn-danger btn-sm" onclick="deleteOutpatient('${p.id}')">Delete</button>
         </div>
@@ -2805,9 +3240,9 @@
       document.getElementById('out-edit-id').value = '';
       document.getElementById('out-modal-title').textContent = 'Register Outpatient Visit';
       ['out-name', 'out-age', 'out-phone', 'out-address', 'out-symptoms', 'out-diagnosis', 'out-prescription', 'out-notes'].forEach(id => document.getElementById(id).value = '');
-      document.getElementById('out-gender').value = '';
+      setSelectVal('out-gender', 'out-gender-other', '');
       document.getElementById('out-doctor').value = '';
-      document.getElementById('out-referred').value = '';
+      setSelectVal('out-referred', 'out-referred-other', '');
       const now = new Date();
       document.getElementById('out-date').value = now.toISOString().split('T')[0];
       document.getElementById('out-time').value = now.toTimeString().slice(0, 5);
@@ -2822,14 +3257,14 @@
       document.getElementById('out-modal-title').textContent = 'Edit Outpatient Visit';
       document.getElementById('out-name').value = p.patient_name;
       document.getElementById('out-age').value = p.age;
-      document.getElementById('out-gender').value = p.gender;
+      setSelectVal('out-gender', 'out-gender-other', p.gender);
       document.getElementById('out-phone').value = p.phone;
       document.getElementById('out-address').value = p.address || '';
       document.getElementById('out-symptoms').value = p.symptoms;
       document.getElementById('out-diagnosis').value = p.diagnosis || '';
       document.getElementById('out-prescription').value = p.prescription || '';
       document.getElementById('out-doctor').value = p.doctor_id;
-      document.getElementById('out-referred').value = p.referred_by || '';
+      setSelectVal('out-referred', 'out-referred-other', p.referred_by || '');
       document.getElementById('out-date').value = p.visit_date;
       document.getElementById('out-time').value = p.visit_time;
       document.getElementById('out-followup').value = p.follow_up_date || '';
@@ -2837,12 +3272,12 @@
       openModal('modal-outpatient');
     }
 
-    async function saveOutpatient() {
+    async function saveOutpatient(andPrint = false) {
       const id = document.getElementById('out-edit-id').value;
       const body = {
         patient_name: document.getElementById('out-name').value.trim(),
         age: document.getElementById('out-age').value,
-        gender: document.getElementById('out-gender').value,
+        gender: getSelectVal('out-gender', 'out-gender-other'),
         phone: document.getElementById('out-phone').value.trim(),
         address: document.getElementById('out-address').value.trim(),
         symptoms: document.getElementById('out-symptoms').value.trim(),
@@ -2853,7 +3288,7 @@
         visit_time: document.getElementById('out-time').value,
         follow_up_date: document.getElementById('out-followup').value,
         notes: document.getElementById('out-notes').value.trim(),
-        referred_by: document.getElementById('out-referred').value
+        referred_by: getSelectVal('out-referred', 'out-referred-other')
       };
       if (!body.patient_name || !body.age || !body.gender || !body.phone || !body.symptoms || !body.doctor_id || !body.visit_date || !body.visit_time)
         return showToast('Please fill all required fields', 'error');
@@ -2868,7 +3303,9 @@
         await loadOutpatients();
         loadDashboard();
 
-        if (!id) {
+        if (andPrint) {
+          printOPDSlip(outData);
+        } else if (!id && typeof currentUser !== 'undefined' && currentUser && (currentUser.role === 'doctor' || currentUser.role === 'operator' || currentUser.role === 'receptionist')) {
           document.getElementById('bill-name').value = body.patient_name;
           document.getElementById('bill-age').value = body.age + ' Yrs';
           document.getElementById('bill-gender').value = body.gender;
@@ -2901,7 +3338,7 @@
 
     function renderInpatients() {
       const data = inpatients.filter(p =>
-        (p.patient_name + p.doctor_name + p.ward + p.diagnosis).toLowerCase().includes(inFilter)
+        (p.patient_name + p.doctor_name + p.ward + p.bed_number + p.diagnosis).toLowerCase().includes(inFilter)
       );
       const tbody = document.getElementById('in-tbody');
       tbody.innerHTML = data.length ? data.map(p => `
@@ -2927,6 +3364,7 @@
       <td><span class="badge badge-${p.status}">${capitalize(p.status)}</span></td>
       <td>
         <div class="actions-cell">
+          <button class="btn btn-secondary btn-sm" onclick="printIPDSlip(inpatients.find(x=>x.id==='${p.id}'))">🖨️ Print</button>
           <button class="btn btn-secondary btn-sm" onclick="editInpatient('${p.id}')">Edit</button>
           <button class="btn btn-danger btn-sm" onclick="deleteInpatient('${p.id}')">Delete</button>
         </div>
@@ -2946,10 +3384,10 @@
       document.getElementById('in-edit-id').value = '';
       document.getElementById('in-modal-title').textContent = 'Admit Inpatient';
       ['in-name', 'in-age', 'in-phone', 'in-address', 'in-emg-name', 'in-emg-phone', 'in-bed', 'in-diagnosis', 'in-treatment', 'in-notes', 'in-photo-desc', 'in-dis-date', 'in-dis-time'].forEach(id => document.getElementById(id).value = '');
-      document.getElementById('in-gender').value = '';
+      setSelectVal('in-gender', 'in-gender-other', '');
       document.getElementById('in-doctor').value = '';
-      document.getElementById('in-referred').value = '';
-      document.getElementById('in-ward').value = '';
+      setSelectVal('in-referred', 'in-referred-other', '');
+      setSelectVal('in-ward', 'in-ward-other', '');
       document.getElementById('in-status').value = 'admitted';
       const now = new Date();
       document.getElementById('in-adm-date').value = now.toISOString().split('T')[0];
@@ -2964,14 +3402,14 @@
       document.getElementById('in-modal-title').textContent = 'Edit Inpatient';
       document.getElementById('in-name').value = p.patient_name;
       document.getElementById('in-age').value = p.age;
-      document.getElementById('in-gender').value = p.gender;
+      setSelectVal('in-gender', 'in-gender-other', p.gender);
       document.getElementById('in-phone').value = p.phone;
       document.getElementById('in-address').value = p.address || '';
       document.getElementById('in-emg-name').value = p.emergency_contact || '';
       document.getElementById('in-emg-phone').value = p.emergency_phone || '';
       document.getElementById('in-doctor').value = p.doctor_id;
-      document.getElementById('in-referred').value = p.referred_by || '';
-      document.getElementById('in-ward').value = p.ward;
+      setSelectVal('in-referred', 'in-referred-other', p.referred_by || '');
+      setSelectVal('in-ward', 'in-ward-other', p.ward);
       document.getElementById('in-bed').value = p.bed_number;
       document.getElementById('in-status').value = p.status;
       document.getElementById('in-adm-date').value = p.admission_date;
@@ -2985,18 +3423,18 @@
       openModal('modal-inpatient');
     }
 
-    async function saveInpatient() {
+    async function saveInpatient(andPrint = false) {
       const id = document.getElementById('in-edit-id').value;
       const body = {
         patient_name: document.getElementById('in-name').value.trim(),
         age: document.getElementById('in-age').value,
-        gender: document.getElementById('in-gender').value,
+        gender: getSelectVal('in-gender', 'in-gender-other'),
         phone: document.getElementById('in-phone').value.trim(),
         address: document.getElementById('in-address').value.trim(),
         emergency_contact: document.getElementById('in-emg-name').value.trim(),
         emergency_phone: document.getElementById('in-emg-phone').value.trim(),
         doctor_id: document.getElementById('in-doctor').value,
-        ward: document.getElementById('in-ward').value,
+        ward: getSelectVal('in-ward', 'in-ward-other'),
         bed_number: document.getElementById('in-bed').value.trim(),
         status: document.getElementById('in-status').value,
         admission_date: document.getElementById('in-adm-date').value,
@@ -3007,7 +3445,7 @@
         treatment: document.getElementById('in-treatment').value.trim(),
         notes: document.getElementById('in-notes').value.trim(),
         photo_description: document.getElementById('in-photo-desc').value.trim(),
-        referred_by: document.getElementById('in-referred').value
+        referred_by: getSelectVal('in-referred', 'in-referred-other')
       };
       if (!body.patient_name || !body.age || !body.gender || !body.phone || !body.doctor_id || !body.ward || !body.bed_number || !body.admission_date || !body.admission_time || !body.diagnosis)
         return showToast('Please fill all required fields', 'error');
@@ -3023,7 +3461,9 @@
           await loadInpatients();
           loadDashboard();
 
-          if (!id) {
+          if (andPrint) {
+            printIPDSlip(inData);
+          } else if (!id && typeof currentUser !== 'undefined' && currentUser && (currentUser.role === 'doctor' || currentUser.role === 'operator' || currentUser.role === 'receptionist')) {
             document.getElementById('bill-name').value = body.patient_name;
             document.getElementById('bill-age').value = body.age + ' Yrs';
             document.getElementById('bill-gender').value = body.gender;
@@ -3082,7 +3522,7 @@
 
     function openDoctorModal() {
       document.getElementById('doc-name').value = '';
-      document.getElementById('doc-spec').value = '';
+      setSelectVal('doc-spec', 'doc-spec-other', '');
       document.getElementById('doc-phone').value = '';
       document.getElementById('doc-email').value = '';
       openModal('modal-doctor');
@@ -3091,7 +3531,7 @@
     async function saveDoctor() {
       const body = {
         name: document.getElementById('doc-name').value.trim(),
-        specialization: document.getElementById('doc-spec').value,
+        specialization: getSelectVal('doc-spec', 'doc-spec-other'),
         phone: document.getElementById('doc-phone').value.trim(),
         email: document.getElementById('doc-email').value.trim()
       };
@@ -3300,7 +3740,7 @@
     function resetBillForm(type) {
       ['bill-name', 'bill-age', 'bill-phone', 'bill-address', 'bill-indoor', 'bill-admdate', 'bill-disdate', 'bill-diagnostic', 'bill-utr']
         .forEach(id => document.getElementById(id).value = '');
-      document.getElementById('bill-gender').value = '';
+      setSelectVal('bill-gender', 'bill-gender-other', '');
       document.getElementById('bill-doctor').value = '';
       document.getElementById('bill-date').value = new Date().toISOString().split('T')[0];
       setPayMode('cash');
@@ -3351,7 +3791,7 @@
         bill_date: document.getElementById('bill-date').value,
         patient_name: document.getElementById('bill-name').value.trim(),
         age: document.getElementById('bill-age').value.trim(),
-        gender: document.getElementById('bill-gender').value,
+        gender: getSelectVal('bill-gender', 'bill-gender-other'),
         address: document.getElementById('bill-address').value.trim(),
         phone: document.getElementById('bill-phone').value.trim(),
         indoor_no: document.getElementById('bill-indoor').value.trim(),
@@ -3611,6 +4051,8 @@
     }
 
     function handleProcedureChange(val) {
+      const otherWrap = document.getElementById('sono-other-proc-wrap');
+      if (otherWrap) otherWrap.style.display = (val === 'Other') ? 'block' : 'none';
       const isInvasive = ['Amniocentesis', 'Chorionic Villi Aspiration', 'Fetal Biopsy', 'Cordocentesis'].includes(val);
       if (isInvasive) {
         document.getElementById('sono-is-invasive').checked = true;
@@ -3642,10 +4084,12 @@
        });
 
       document.getElementById('sono-procedure').value = 'Ultrasound';
+      if (document.getElementById('sono-other-proc-wrap')) document.getElementById('sono-other-proc-wrap').style.display = 'none';
       document.getElementById('sono-doctor').value = '';
       document.getElementById('sono-ref-type').value = 'referred';
       document.getElementById('sono-decl-mode').value = 'signature';
-      document.getElementById('sono-decl-id-sex').value = '';
+      setSelectVal('sono-decl-id-sex', 'sono-decl-id-sex-other', '');
+      setSelectVal('sono-referred', 'sono-referred-other', '');
       
       document.getElementById('sono-is-invasive').checked = true;
       document.getElementById('sono-invasive-section').style.display = 'block';
@@ -3751,7 +4195,7 @@
           
           id_name: document.getElementById('sono-decl-id-name').value.trim(),
           id_age: document.getElementById('sono-decl-id-age').value,
-          id_sex: document.getElementById('sono-decl-id-sex').value,
+          id_sex: getSelectVal('sono-decl-id-sex', 'sono-decl-id-sex-other'),
           id_relation: document.getElementById('sono-decl-id-relation').value.trim(),
           id_address: document.getElementById('sono-decl-id-address').value.trim(),
           attester_name: document.getElementById('sono-decl-attester-name').value.trim(),
@@ -3768,7 +4212,7 @@
         contact: document.getElementById('sono-contact').value.trim(),
         living_sons: document.getElementById('sono-sons').value.trim(),
         living_daughters: document.getElementById('sono-daughters').value.trim(),
-        referred_by: extra_fields.referral_type === 'referred' ? document.getElementById('sono-referred').value.trim() : 'Self-Referral',
+        referred_by: extra_fields.referral_type === 'referred' ? getSelectVal('sono-referred', 'sono-referred-other') : 'Self-Referral',
         lmp: document.getElementById('sono-lmp').value,
         indications,
         procedure_done: document.getElementById('sono-procedure').value,
@@ -4288,6 +4732,7 @@
   `;
       document.getElementById('receipt-doc').innerHTML = html;
       openModal('modal-receipt');
+      setTimeout(() => { window.print(); }, 400);
     }
 
     function escapeHtml(str) {
@@ -4304,8 +4749,370 @@
     function truncate(s, n) { return s && s.length > n ? s.slice(0, n) + '…' : (s || ''); }
     function capitalize(s) { return s ? s.charAt(0).toUpperCase() + s.slice(1) : ''; }
 
+    // ── AUTHENTICATION & ROLE ACCESS CONTROL ──
+    let currentUser = null;
+
+    function checkAuth() {
+      const saved = localStorage.getItem('medicare_user');
+      if (saved) {
+        try {
+          currentUser = JSON.parse(saved);
+          applyUserRole(currentUser);
+          document.getElementById('login-overlay').style.display = 'none';
+        } catch(e) {
+          showLoginModal();
+        }
+      } else {
+        showLoginModal();
+      }
+    }
+
+    function showLoginModal() {
+      document.getElementById('login-overlay').style.display = 'flex';
+      const pwdEl = document.getElementById('login-password');
+      if (pwdEl) pwdEl.value = '';
+      currentUser = null;
+    }
+
+    function presetLogin(role) {
+      const map = {
+        doctor: 'doctor',
+        operator: 'operator',
+        receptionist: 'receptionist'
+      };
+      if (map[role]) {
+        document.getElementById('login-username').value = map[role];
+        document.getElementById('login-password').value = '';
+        document.getElementById('login-password').focus();
+      }
+    }
+
+    async function handleLogin(e) {
+      e.preventDefault();
+      const u = document.getElementById('login-username').value.trim();
+      const p = document.getElementById('login-password').value.trim();
+      const errDiv = document.getElementById('login-error');
+      errDiv.style.display = 'none';
+
+      try {
+        const res = await fetch(`${API}/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username: u, password: p })
+        });
+        const data = await res.json();
+        if (!res.ok || data.error) {
+          errDiv.textContent = data.error || 'Login failed';
+          errDiv.style.display = 'block';
+          return;
+        }
+        currentUser = data.user;
+        localStorage.setItem('medicare_user', JSON.stringify(currentUser));
+        document.getElementById('login-overlay').style.display = 'none';
+        applyUserRole(currentUser);
+        showToast(`Welcome, ${currentUser.name}!`, 'success');
+      } catch(err) {
+        errDiv.textContent = 'Server connection error';
+        errDiv.style.display = 'block';
+      }
+    }
+
+    function handleLogout() {
+      localStorage.removeItem('medicare_user');
+      currentUser = null;
+      document.getElementById('user-badge').style.display = 'none';
+      showLoginModal();
+    }
+
+    function applyUserRole(user) {
+      if (!user) return;
+      
+      document.getElementById('user-badge').style.display = 'flex';
+      document.getElementById('user-name-display').textContent = user.name;
+      
+      const roleBadge = document.getElementById('user-role-badge');
+      roleBadge.textContent = user.role.toUpperCase();
+      if (user.role === 'doctor') {
+        roleBadge.style.background = 'var(--teal)';
+      } else if (user.role === 'operator') {
+        roleBadge.style.background = '#2563EB';
+      } else {
+        roleBadge.style.background = '#D97706';
+      }
+
+      const navItems = document.querySelectorAll('.sidebar .nav-item');
+      const role = user.role;
+
+      navItems.forEach(item => {
+        const nav = item.getAttribute('data-nav');
+        const onclickStr = item.getAttribute('onclick') || '';
+
+        if (role === 'doctor') {
+          item.style.display = 'flex';
+        } else {
+          // Operator & Receptionist: access to Patient Records, Billing, and Sonography Form
+          if (nav === 'patients' || nav === 'billing' || nav === 'sonography') {
+            item.style.display = 'flex';
+          } else if (onclickStr.includes('openOutpatientModal') || onclickStr.includes('openInpatientModal') || onclickStr.includes('switchSonoTab') || onclickStr.includes('openBillModal')) {
+            item.style.display = 'flex';
+          } else {
+            item.style.display = 'none';
+          }
+        }
+      });
+
+      if (role !== 'doctor') {
+        showSection('patients');
+      } else {
+        showSection('dashboard');
+        loadUsersForPasswordManager();
+      }
+    }
+
+    function togglePasswordVisibility(inputId, btnEl) {
+      const input = document.getElementById(inputId);
+      if (!input) return;
+      if (input.type === 'password') {
+        input.type = 'text';
+        btnEl.textContent = '🙈';
+      } else {
+        input.type = 'password';
+        btnEl.textContent = '👁️';
+      }
+    }
+
+    async function loadUsersForPasswordManager() {
+      if (!currentUser || currentUser.role !== 'doctor') return;
+      const card = document.getElementById('user-password-card');
+      if (card) card.style.display = 'block';
+      
+      try {
+        const res = await fetch(`${API}/users`);
+        const users = await res.json();
+        const select = document.getElementById('pwd-user-select');
+        if (select) {
+          select.innerHTML = users.map(u => `<option value="${u.id}">${u.name} (@${u.username}) — [${u.role.toUpperCase()}]</option>`).join('');
+        }
+      } catch(e) {
+        console.error('Failed to load users', e);
+      }
+    }
+
+    async function updateUserPassword() {
+      const userId = document.getElementById('pwd-user-select').value;
+      const newPassword = document.getElementById('pwd-new-password').value.trim();
+      if (!userId || !newPassword) {
+        return showToast('Please select an account and enter a new password', 'error');
+      }
+      try {
+        const res = await fetch(`${API}/users/${userId}/password`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ password: newPassword })
+        });
+        const data = await res.json();
+        if (res.ok && data.success) {
+          showToast('Password updated successfully!', 'success');
+          document.getElementById('pwd-new-password').value = '';
+        } else {
+          showToast(data.error || 'Failed to update password', 'error');
+        }
+      } catch(e) {
+        showToast('Failed to update password', 'error');
+      }
+    }
+
+    // ── PRINT SLIP GENERATORS ──
+    function printOPDSlip(p) {
+      const s = hospitalSettings;
+      const doc = doctors.find(d => d.id === p.doctor_id) || {};
+      const logoHtml = s.logo_data
+        ? `<img src="${s.logo_data}" style="width:100%;height:100%;object-fit:contain;" />`
+        : `<img src="logo.jpg" style="width:100%;height:100%;object-fit:contain;" />`;
+
+      const html = `
+        <div style="font-family:'Inter', sans-serif; color:#000; padding:10px;">
+          <!-- Header (Matching Cash Memo) -->
+          <div style="border-bottom: 2px solid #000; padding-bottom: 8px; display: flex; align-items: center; gap: 16px; margin-bottom: 14px;">
+            <div class="r-logo" style="width:60px; height:60px; border-radius:8px; display:flex; align-items:center; justify-content:center; flex-shrink:0; overflow:hidden;">${logoHtml}</div>
+            <div style="flex:1; text-align:center;">
+              <div style="font-size:32px; font-weight:900; letter-spacing:0.5px; font-family:'Playfair Display', serif, sans-serif;">${escapeHtml(s.hospital_name || 'Maale Hospital')}</div>
+              <div style="color:#000; font-size:13px; font-weight:600; margin-top:2px;">${escapeHtml(s.address || '1st Floor, Ganesh Darshan Building, Hariniwas Circle, Thane (W)')}</div>
+              <div style="color:#000; font-size:12px; font-weight:600; margin-top:2px;">Cont.: ${escapeHtml(s.phone || '9967255996')} &bull; REGD. No.: ${escapeHtml(s.reg_no || 'TMC/ZONEA/0108')}</div>
+            </div>
+            <div style="text-align:right; min-width:140px;">
+              <div style="font-size:13px; font-weight:bold; border-bottom:1px solid #000; display:inline-block; margin-bottom:4px; text-transform:uppercase; letter-spacing:0.5px;">OPD CASE PAPER</div>
+            </div>
+          </div>
+
+          <!-- Patient Meta Information -->
+          <div style="font-size: 13.5px; margin: 12px 0 16px 0; line-height: 2; color:#000;">
+            <div style="display:flex; justify-content:space-between; margin-bottom: 4px;">
+              <div style="flex:1; display:flex; align-items:flex-end; min-width:0;"><b>OPD Visit No.:</b><div style="border-bottom:1px solid #000; flex:1; margin-left:8px; padding-left:8px; font-weight:bold; word-break:break-all;">OPD-${p.id ? (p.id.length > 12 ? p.id.slice(0, 8).toUpperCase() : p.id) : 'NEW'}</div></div>
+              <div style="width:30px;"></div>
+              <div style="flex:1; display:flex; align-items:flex-end;"><b>Visit Date &amp; Time:</b><div style="border-bottom:1px solid #000; flex:1; margin-left:8px; padding-left:8px; font-weight:bold;">${formatDate(p.visit_date)} ${p.visit_time || ''}</div></div>
+            </div>
+            <div style="display:flex; margin-bottom: 4px; gap:16px; align-items:flex-end;">
+              <div style="display:flex; flex:2; align-items:flex-end;"><b>Patient's Name:</b><div style="border-bottom:1px solid #000; flex:1; margin-left:8px; padding-left:8px; font-weight:bold;">${escapeHtml(p.patient_name)}</div></div>
+              <div style="display:flex; flex:1; align-items:flex-end;"><b>Age / Gender:</b><div style="border-bottom:1px solid #000; flex:1; margin-left:8px; padding-left:8px; font-weight:bold;">${escapeHtml(p.age || '')} Yrs / ${escapeHtml(capitalize(p.gender || ''))}</div></div>
+            </div>
+            <div style="display:flex; margin-bottom: 4px; gap:16px; align-items:flex-end;">
+              <div style="display:flex; flex:2; align-items:flex-end;"><b>Address:</b><div style="border-bottom:1px solid #000; flex:1; margin-left:8px; padding-left:8px; font-weight:bold;">${escapeHtml(p.address || '')}</div></div>
+              <div style="display:flex; flex:1; align-items:flex-end;"><b>Contact No.:</b><div style="border-bottom:1px solid #000; flex:1; margin-left:8px; padding-left:8px; font-weight:bold;">${escapeHtml(p.phone || '')}</div></div>
+            </div>
+            <div style="display:flex; margin-bottom: 4px; gap:16px; align-items:flex-end;">
+              <div style="display:flex; flex:1.5; align-items:flex-end;"><b>Consultant Dr.:</b><div style="border-bottom:1px solid #000; flex:1; margin-left:8px; padding-left:8px; font-weight:bold;">${escapeHtml(p.doctor_name || doc.name || '')} ${doc.specialization ? '(' + escapeHtml(doc.specialization) + ')' : ''}</div></div>
+              <div style="display:flex; flex:1; align-items:flex-end;"><b>Referred By:</b><div style="border-bottom:1px solid #000; flex:1; margin-left:8px; padding-left:8px; font-weight:bold;">${escapeHtml(p.referred_by || 'Self / Direct')}</div></div>
+            </div>
+          </div>
+
+          <!-- Clinical Sections -->
+          <table style="width:100%; border-collapse: collapse; margin-bottom: 14px; border: 2px solid #000; color:#000;">
+            <thead>
+              <tr>
+                <th style="border:1px solid #000; border-bottom:2px solid #000; padding:8px 12px; font-size:13px; text-align:left; background:#F7F9FC; text-transform:uppercase;">Clinical Information</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td style="border:1px solid #000; padding:10px 12px; font-size:13px; line-height:1.6;">
+                  <div style="margin-bottom:10px;">
+                    <b style="color:#000; text-transform:uppercase; font-size:11.5px; letter-spacing:0.5px;">Symptoms / Chief Complaints:</b>
+                    <div style="margin-top:2px; font-weight:500;">${escapeHtml(p.symptoms || 'None recorded')}</div>
+                  </div>
+                  <div style="margin-bottom:10px; border-top:1px dashed #ccc; padding-top:8px;">
+                    <b style="color:#000; text-transform:uppercase; font-size:11.5px; letter-spacing:0.5px;">Diagnosis:</b>
+                    <div style="margin-top:2px; font-weight:500;">${escapeHtml(p.diagnosis || 'Pending / Under evaluation')}</div>
+                  </div>
+                  <div style="margin-bottom:10px; border-top:1px dashed #ccc; padding-top:8px;">
+                    <b style="color:#000; text-transform:uppercase; font-size:11.5px; letter-spacing:0.5px;">Prescription &amp; Treatment Advice (Rx):</b>
+                    <div style="margin-top:2px; font-weight:500; min-height:60px; white-space:pre-wrap;">${escapeHtml(p.prescription || 'As advised by doctor')}</div>
+                  </div>
+                  ${p.follow_up_date || p.notes ? `
+                  <div style="border-top:1px dashed #ccc; padding-top:8px; display:flex; justify-content:space-between;">
+                    ${p.follow_up_date ? `<div><b style="font-size:11.5px; text-transform:uppercase;">Next Follow-up Date:</b> <span style="font-weight:bold;">${formatDate(p.follow_up_date)}</span></div>` : ''}
+                    ${p.notes ? `<div><b style="font-size:11.5px; text-transform:uppercase;">Notes:</b> ${escapeHtml(p.notes)}</div>` : ''}
+                  </div>` : ''}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+
+          <!-- Signatures -->
+          <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-top: 40px; color:#000; font-size:13px;">
+            <div style="border-top:1px solid #000; padding-top:4px; width:220px; text-align:center;">
+              Patient / Relative Signature
+            </div>
+            <div style="border-top:1px solid #000; padding-top:4px; width:240px; text-align:center; font-weight:bold;">
+              Consulting Doctor's Signature<br>
+              <span style="font-size:11px; font-weight:normal;">For ${escapeHtml(s.hospital_name || 'Maale Hospital')}</span>
+            </div>
+          </div>
+        </div>
+      `;
+      document.getElementById('receipt-doc').innerHTML = html;
+      openModal('modal-receipt');
+      setTimeout(() => { window.print(); }, 400);
+    }
+
+    function printIPDSlip(p) {
+      const s = hospitalSettings;
+      const doc = doctors.find(d => d.id === p.doctor_id) || {};
+      const logoHtml = s.logo_data
+        ? `<img src="${s.logo_data}" style="width:100%;height:100%;object-fit:contain;" />`
+        : `<img src="logo.jpg" style="width:100%;height:100%;object-fit:contain;" />`;
+
+      const html = `
+        <div style="font-family:'Inter', sans-serif; color:#000; padding:10px;">
+          <!-- Header (Matching Cash Memo) -->
+          <div style="border-bottom: 2px solid #000; padding-bottom: 8px; display: flex; align-items: center; gap: 16px; margin-bottom: 14px;">
+            <div class="r-logo" style="width:60px; height:60px; border-radius:8px; display:flex; align-items:center; justify-content:center; flex-shrink:0; overflow:hidden;">${logoHtml}</div>
+            <div style="flex:1; text-align:center;">
+              <div style="font-size:32px; font-weight:900; letter-spacing:0.5px; font-family:'Playfair Display', serif, sans-serif;">${escapeHtml(s.hospital_name || 'Maale Hospital')}</div>
+              <div style="color:#000; font-size:13px; font-weight:600; margin-top:2px;">${escapeHtml(s.address || '1st Floor, Ganesh Darshan Building, Hariniwas Circle, Thane (W)')}</div>
+              <div style="color:#000; font-size:12px; font-weight:600; margin-top:2px;">Cont.: ${escapeHtml(s.phone || '9967255996')} &bull; REGD. No.: ${escapeHtml(s.reg_no || 'TMC/ZONEA/0108')}</div>
+            </div>
+            <div style="text-align:right; min-width:140px;">
+              <div style="font-size:13px; font-weight:bold; border-bottom:1px solid #000; display:inline-block; margin-bottom:4px; text-transform:uppercase; letter-spacing:0.5px;">IPD ADMISSION SLIP</div>
+            </div>
+          </div>
+
+          <!-- Admission & Patient Meta Information -->
+          <div style="font-size: 13.5px; margin: 12px 0 16px 0; line-height: 2; color:#000;">
+            <div style="display:flex; justify-content:space-between; margin-bottom: 4px;">
+              <div style="flex:1; display:flex; align-items:flex-end; min-width:0;"><b>Indoor / IPD No.:</b><div style="border-bottom:1px solid #000; flex:1; margin-left:8px; padding-left:8px; font-weight:bold; word-break:break-all;">IPD-${p.id ? (p.id.length > 12 ? p.id.slice(0, 8).toUpperCase() : p.id) : 'NEW'}</div></div>
+              <div style="width:30px;"></div>
+              <div style="flex:1; display:flex; align-items:flex-end;"><b>Date of Admission:</b><div style="border-bottom:1px solid #000; flex:1; margin-left:8px; padding-left:8px; font-weight:bold;">${formatDate(p.admission_date)} ${p.admission_time || ''}</div></div>
+            </div>
+            <div style="display:flex; margin-bottom: 4px; gap:16px; align-items:flex-end;">
+              <div style="display:flex; flex:2; align-items:flex-end;"><b>Patient's Name:</b><div style="border-bottom:1px solid #000; flex:1; margin-left:8px; padding-left:8px; font-weight:bold;">${escapeHtml(p.patient_name)}</div></div>
+              <div style="display:flex; flex:1; align-items:flex-end;"><b>Age / Gender:</b><div style="border-bottom:1px solid #000; flex:1; margin-left:8px; padding-left:8px; font-weight:bold;">${escapeHtml(p.age || '')} Yrs / ${escapeHtml(capitalize(p.gender || ''))}</div></div>
+            </div>
+            <div style="display:flex; margin-bottom: 4px; gap:16px; align-items:flex-end;">
+              <div style="display:flex; flex:2; align-items:flex-end;"><b>Address:</b><div style="border-bottom:1px solid #000; flex:1; margin-left:8px; padding-left:8px; font-weight:bold;">${escapeHtml(p.address || '')}</div></div>
+              <div style="display:flex; flex:1; align-items:flex-end;"><b>Contact No.:</b><div style="border-bottom:1px solid #000; flex:1; margin-left:8px; padding-left:8px; font-weight:bold;">${escapeHtml(p.phone || '')}</div></div>
+            </div>
+            <div style="display:flex; margin-bottom: 4px; gap:16px; align-items:flex-end;">
+              <div style="display:flex; flex:1.2; align-items:flex-end;"><b>Ward / Bed No.:</b><div style="border-bottom:1px solid #000; flex:1; margin-left:8px; padding-left:8px; font-weight:bold;">${escapeHtml(p.ward || '')} &mdash; Bed: ${escapeHtml(p.bed_number || '')}</div></div>
+              <div style="display:flex; flex:1.5; align-items:flex-end;"><b>Consultant Dr.:</b><div style="border-bottom:1px solid #000; flex:1; margin-left:8px; padding-left:8px; font-weight:bold;">${escapeHtml(p.doctor_name || doc.name || '')}</div></div>
+            </div>
+            <div style="display:flex; margin-bottom: 4px; gap:16px; align-items:flex-end;">
+              <div style="display:flex; flex:1.5; align-items:flex-end;"><b>Emergency Contact:</b><div style="border-bottom:1px solid #000; flex:1; margin-left:8px; padding-left:8px; font-weight:bold;">${escapeHtml(p.emergency_contact || '—')} ${p.emergency_phone ? '(' + escapeHtml(p.emergency_phone) + ')' : ''}</div></div>
+              <div style="display:flex; flex:1; align-items:flex-end;"><b>Status:</b><div style="border-bottom:1px solid #000; flex:1; margin-left:8px; padding-left:8px; font-weight:bold; text-transform:uppercase;">${escapeHtml(p.status || 'Admitted')}</div></div>
+            </div>
+            ${p.discharge_date ? `
+            <div style="display:flex; margin-bottom: 4px; gap:16px; align-items:flex-end;">
+              <div style="display:flex; flex:1; align-items:flex-end;"><b>D.O. Discharge:</b><div style="border-bottom:1px solid #000; flex:1; margin-left:8px; padding-left:8px; font-weight:bold;">${formatDate(p.discharge_date)} ${p.discharge_time || ''}</div></div>
+            </div>` : ''}
+          </div>
+
+          <!-- Admission & Treatment Details Table -->
+          <table style="width:100%; border-collapse: collapse; margin-bottom: 14px; border: 2px solid #000; color:#000;">
+            <thead>
+              <tr>
+                <th style="border:1px solid #000; border-bottom:2px solid #000; padding:8px 12px; font-size:13px; text-align:left; background:#F7F9FC; text-transform:uppercase;">Admission &amp; Treatment Summary</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td style="border:1px solid #000; padding:10px 12px; font-size:13px; line-height:1.6;">
+                  <div style="margin-bottom:10px;">
+                    <b style="color:#000; text-transform:uppercase; font-size:11.5px; letter-spacing:0.5px;">Primary Diagnosis:</b>
+                    <div style="margin-top:2px; font-weight:500;">${escapeHtml(p.diagnosis || 'None recorded')}</div>
+                  </div>
+                  <div style="margin-bottom:10px; border-top:1px dashed #ccc; padding-top:8px;">
+                    <b style="color:#000; text-transform:uppercase; font-size:11.5px; letter-spacing:0.5px;">Treatment Plan &amp; Procedures:</b>
+                    <div style="margin-top:2px; font-weight:500; min-height:50px; white-space:pre-wrap;">${escapeHtml(p.treatment || 'Standard indoor care protocol')}</div>
+                  </div>
+                  ${p.notes ? `
+                  <div style="border-top:1px dashed #ccc; padding-top:8px;">
+                    <b style="color:#000; text-transform:uppercase; font-size:11.5px; letter-spacing:0.5px;">Notes &amp; Observations:</b>
+                    <div style="margin-top:2px; font-weight:500;">${escapeHtml(p.notes)}</div>
+                  </div>` : ''}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+
+          <!-- Signatures -->
+          <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-top: 40px; color:#000; font-size:13px;">
+            <div style="border-top:1px solid #000; padding-top:4px; width:220px; text-align:center;">
+              Patient / Relative Signature
+            </div>
+            <div style="border-top:1px solid #000; padding-top:4px; width:240px; text-align:center; font-weight:bold;">
+              Consulting Doctor / Authorized Signatory<br>
+              <span style="font-size:11px; font-weight:normal;">For ${escapeHtml(s.hospital_name || 'Maale Hospital')}</span>
+            </div>
+          </div>
+        </div>
+      `;
+      document.getElementById('receipt-doc').innerHTML = html;
+      openModal('modal-receipt');
+      setTimeout(() => { window.print(); }, 400);
+    }
+
     // ── INIT ──
-    loadAll();
+    loadAll().then(() => checkAuth());
   </script>
 </body>
 

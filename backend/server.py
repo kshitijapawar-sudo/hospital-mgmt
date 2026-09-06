@@ -8,12 +8,23 @@ Requires: Python 3.8+ (uses only standard library)
 import json
 import sqlite3
 import uuid
+import socket
+import mimetypes
+import time
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from urllib.parse import urlparse, parse_qs
 from datetime import datetime
 import os
 
 DB_PATH = os.path.join(os.path.dirname(__file__), 'hospital.db')
+FRONTEND_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'frontend'))
+
+# Bumped every time this process starts (e.g. after an auto-update restart).
+# The frontend polls /api/version and auto-reloads itself when this changes,
+# so a developer's update rolled out on the server PC reaches every browser
+# (doctor's laptop, receptionist's PC) without anyone touching those machines.
+SERVER_VERSION = str(int(time.time()))
+
 
 # ─── DATABASE SETUP ─────────────────────────────────────────
 def get_db():
@@ -144,7 +155,26 @@ def init_db():
             created_at TEXT DEFAULT (datetime('now', 'localtime')),
             FOREIGN KEY (doctor_id) REFERENCES doctors(id)
         );
+
+        CREATE TABLE IF NOT EXISTS users (
+            id TEXT PRIMARY KEY,
+            username TEXT NOT NULL UNIQUE,
+            password TEXT NOT NULL,
+            name TEXT NOT NULL,
+            role TEXT NOT NULL CHECK (role IN ('doctor', 'operator', 'receptionist')),
+            created_at TEXT DEFAULT (datetime('now', 'localtime'))
+        );
     """)
+
+    # Seed users
+    ucnt = c.execute("SELECT COUNT(*) FROM users").fetchone()[0]
+    if ucnt == 0:
+        useed = [
+            (str(uuid.uuid4()), 'doctor',       'doctor123',       'Dr. Administrator',    'doctor'),
+            (str(uuid.uuid4()), 'operator',     'operator123',     'Hospital Operator',    'operator'),
+            (str(uuid.uuid4()), 'receptionist', 'receptionist123', 'Hospital Receptionist','receptionist'),
+        ]
+        c.executemany("INSERT INTO users (id,username,password,name,role) VALUES (?,?,?,?,?)", useed)
 
     # Seed doctors
     cnt = c.execute("SELECT COUNT(*) FROM doctors").fetchone()[0]
@@ -163,7 +193,7 @@ def init_db():
     if scnt == 0:
         c.execute("""INSERT INTO hospital_settings
             (id,hospital_name,tagline,address,phone,reg_no,logo_data,next_opd_no,next_ipd_no)
-            VALUES (1,'MediCare HMS','Hospital Management System','','','','',1,1)""")
+            VALUES (1,'Maale Hospital','Hospital Management System','','','','',1,1)""")
 
     # Schema Migrations
     cols = [col[1] for col in c.execute('PRAGMA table_info(inpatients)').fetchall()]
@@ -263,8 +293,57 @@ class Handler(BaseHTTPRequestHandler):
         c = conn.cursor()
 
         try:
+            # ── VERSION (used by frontend to auto-refresh after an update) ──
+            if path == '/api/version':
+                return self.send_json({'version': SERVER_VERSION})
+
+            # ── AUTH & USERS ──
+            if path == '/api/login':
+                if method == 'POST':
+                    b = self.read_body()
+                    username = (b.get('username') or '').strip().lower()
+                    password = (b.get('password') or '').strip()
+                    if not username or not password:
+                        return self.send_json({'error': 'Username and password required'}, 400)
+                    row = c.execute("SELECT id, username, name, role FROM users WHERE LOWER(username)=? AND password=?",
+                                    (username, password)).fetchone()
+                    if not row:
+                        return self.send_json({'error': 'Invalid username or password'}, 401)
+                    user_data = dict(row)
+                    self.send_json({'success': True, 'user': user_data})
+
+            elif path == '/api/users':
+                if method == 'GET':
+                    rows = c.execute("SELECT id, username, name, role, created_at FROM users ORDER BY role, name").fetchall()
+                    self.send_json([dict(r) for r in rows])
+                elif method == 'POST':
+                    b = self.read_body()
+                    if not b.get('username') or not b.get('password') or not b.get('name') or not b.get('role'):
+                        return self.send_json({'error': 'Username, password, name, and role required'}, 400)
+                    if b['role'] not in ('doctor', 'operator', 'receptionist'):
+                        return self.send_json({'error': 'Invalid role'}, 400)
+                    rid = str(uuid.uuid4())
+                    try:
+                        c.execute("INSERT INTO users (id,username,password,name,role) VALUES (?,?,?,?,?)",
+                                  (rid, b['username'].strip().lower(), b['password'].strip(), b['name'].strip(), b['role']))
+                        conn.commit()
+                        self.send_json({'id': rid, 'username': b['username'], 'name': b['name'], 'role': b['role']})
+                    except sqlite3.IntegrityError:
+                        self.send_json({'error': 'Username already exists'}, 400)
+
+            elif path.startswith('/api/users/') and len(parts) == 5 and parts[4] == 'password':
+                uid = parts[3]
+                if method == 'PUT':
+                    b = self.read_body()
+                    new_password = (b.get('password') or '').strip()
+                    if not new_password:
+                        return self.send_json({'error': 'New password required'}, 400)
+                    c.execute("UPDATE users SET password=? WHERE id=?", (new_password, uid))
+                    conn.commit()
+                    self.send_json({'success': True, 'message': 'Password updated successfully'})
+
             # ── DOCTORS ──
-            if path == '/api/doctors':
+            elif path == '/api/doctors':
                 if method == 'GET':
                     rows = c.execute("SELECT * FROM doctors ORDER BY name").fetchall()
                     self.send_json([dict(r) for r in rows])
@@ -565,19 +644,85 @@ class Handler(BaseHTTPRequestHandler):
         finally:
             conn.close()
 
-    def do_GET(self):    self.route('GET')
+    def serve_static(self):
+        parsed = urlparse(self.path)
+        req_path = parsed.path.lstrip('/')
+        if not req_path or req_path == 'index.html':
+            rel_file = 'index.html'
+        else:
+            rel_file = req_path
+
+        filepath = os.path.abspath(os.path.join(FRONTEND_DIR, rel_file))
+
+        if not filepath.startswith(FRONTEND_DIR) or not os.path.isfile(filepath):
+            self.send_response(404)
+            self.send_header('Content-Type', 'text/plain')
+            self.end_headers()
+            self.wfile.write(b'404 Not Found')
+            return
+
+        content_type, _ = mimetypes.guess_type(filepath)
+        if content_type is None:
+            content_type = 'application/octet-stream'
+
+        try:
+            with open(filepath, 'rb') as f:
+                content = f.read()
+            self.send_response(200)
+            self.send_header('Content-Type', content_type)
+            self.send_header('Content-Length', str(len(content)))
+            self.send_header('Access-Control-Allow-Origin', '*')
+            # Never let browsers cache the app shell — every laptop/PC must always
+            # load whatever version currently sits on this server.
+            self.send_header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
+            self.send_header('Pragma', 'no-cache')
+            self.end_headers()
+            self.wfile.write(content)
+        except Exception as e:
+            self.send_response(500)
+            self.end_headers()
+            self.wfile.write(str(e).encode())
+
+    def do_GET(self):
+        parsed = urlparse(self.path)
+        if parsed.path.startswith('/api'):
+            self.route('GET')
+        else:
+            self.serve_static()
+
     def do_POST(self):   self.route('POST')
     def do_PUT(self):    self.route('PUT')
     def do_DELETE(self): self.route('DELETE')
 
+def get_local_ip():
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(('8.8.8.8', 80))
+        ip = s.getsockname()[0]
+        s.close()
+        return ip
+    except Exception:
+        return '127.0.0.1'
 
 if __name__ == '__main__':
     init_db()
     PORT = 5000
+    local_ip = get_local_ip()
     server = HTTPServer(('0.0.0.0', PORT), Handler)
-    print(f"[OK] MediCare HMS Server running at http://localhost:{PORT}")
-    print("   Press Ctrl+C to stop.")
+    print("===================================================")
+    print("           MediCare HMS Server Running             ")
+    print("===================================================")
+    print(f" [OK] Local PC:      http://localhost:{PORT}")
+    print(f" [OK] Mobile/Wi-Fi:  http://{local_ip}:{PORT}")
+    print("===================================================")
+    print(f" Give this address to the Doctor's laptop and any")
+    print(f" other PC on the same Wi-Fi/LAN: http://{local_ip}:{PORT}")
+    print(f" (Tip: reserve this IP for this PC in your router so")
+    print(f"  it never changes.)")
+    print("===================================================")
+    print(" Press Ctrl+C to stop.")
     try:
         server.serve_forever()
     except KeyboardInterrupt:
         print("\n[STOP] Server stopped.")
+

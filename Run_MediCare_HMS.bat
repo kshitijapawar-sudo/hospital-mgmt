@@ -5,17 +5,20 @@ echo ===================================================
 echo             MediCare HMS Launcher                 
 echo ===================================================
 echo.
-echo 1. Starting backend database server...
-start "MediCare HMS Server" cmd /c "cd backend && python server.py"
+echo 1. Starting database ^& application server...
+start "MediCare HMS Server" cmd /k "cd backend && python server.py"
 
-echo 2. Waiting for server to start...
+echo 2. Waiting for server to initialize...
 timeout /t 2 >nul
 
-echo 3. Launching frontend interface in browser...
-start "" "frontend\index.html"
+echo 3. Opening MediCare HMS in browser...
+start http://localhost:5000
 
 echo.
-echo Setup complete. Close the "MediCare HMS Server" window when you want to stop the server.
+echo System launched successfully!
+echo - Keep the "MediCare HMS Server" window open while using the app.
+echo - For mobile access over Wi-Fi, check the IP address shown in the server window.
 echo.
-timeout /t 3 >nul
+timeout /t 4 >nul
 exit
+
