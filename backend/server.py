@@ -13,7 +13,7 @@ import mimetypes
 import time
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from urllib.parse import urlparse, parse_qs
-from datetime import datetime
+from datetime import datetime, timedelta
 import os
 
 DB_PATH = os.path.join(os.path.dirname(__file__), 'hospital.db')
@@ -201,14 +201,26 @@ def init_db():
         c.execute("ALTER TABLE inpatients ADD COLUMN photo_description TEXT DEFAULT ''")
     if 'referred_by' not in cols:
         c.execute("ALTER TABLE inpatients ADD COLUMN referred_by TEXT DEFAULT ''")
+    if 'advance_paid' not in cols:
+        c.execute("ALTER TABLE inpatients ADD COLUMN advance_paid REAL DEFAULT 0")
 
     out_cols = [col[1] for col in c.execute('PRAGMA table_info(outpatients)').fetchall()]
     if 'referred_by' not in out_cols:
-      c.execute("ALTER TABLE outpatients ADD COLUMN referred_by TEXT DEFAULT ''")
+        c.execute("ALTER TABLE outpatients ADD COLUMN referred_by TEXT DEFAULT ''")
 
     sono_cols = [col[1] for col in c.execute('PRAGMA table_info(sonography)').fetchall()]
     if 'extra_fields_json' not in sono_cols:
-      c.execute("ALTER TABLE sonography ADD COLUMN extra_fields_json TEXT DEFAULT '{}'")
+        c.execute("ALTER TABLE sonography ADD COLUMN extra_fields_json TEXT DEFAULT '{}'")
+
+    bill_cols = [col[1] for col in c.execute('PRAGMA table_info(bills)').fetchall()]
+    if 'advance_paid' not in bill_cols:
+        c.execute("ALTER TABLE bills ADD COLUMN advance_paid REAL DEFAULT 0")
+    if 'net_total' not in bill_cols:
+        c.execute("ALTER TABLE bills ADD COLUMN net_total REAL DEFAULT 0")
+
+    sett_cols = [col[1] for col in c.execute('PRAGMA table_info(hospital_settings)').fetchall()]
+    if 'ward_tariffs_json' not in sett_cols:
+        c.execute("ALTER TABLE hospital_settings ADD COLUMN ward_tariffs_json TEXT DEFAULT '{}'")
 
     c.executescript("""
         CREATE TABLE IF NOT EXISTS referral_doctors (
@@ -219,6 +231,27 @@ def init_db():
             hospital TEXT DEFAULT '',
             created_at TEXT DEFAULT (datetime('now', 'localtime'))
         );
+
+        CREATE TABLE IF NOT EXISTS mtp_records (
+            id TEXT PRIMARY KEY,
+            entry_no TEXT NOT NULL UNIQUE,
+            entry_date TEXT NOT NULL,
+            patient_name TEXT NOT NULL,
+            age TEXT DEFAULT '',
+            husband_father_name TEXT DEFAULT '',
+            address TEXT DEFAULT '',
+            contact TEXT DEFAULT '',
+            weeks TEXT DEFAULT '',
+            doctor_id TEXT DEFAULT '',
+            referred_by TEXT DEFAULT '',
+            indication TEXT DEFAULT '',
+            notes TEXT DEFAULT '',
+            extra_fields_json TEXT DEFAULT '{}',
+            created_at TEXT DEFAULT (datetime('now', 'localtime')),
+            FOREIGN KEY (doctor_id) REFERENCES doctors(id)
+        );
+        CREATE INDEX IF NOT EXISTS idx_mtp_date ON mtp_records(entry_date);
+        CREATE INDEX IF NOT EXISTS idx_mtp_patient ON mtp_records(patient_name);
     """)
 
     conn.commit()
@@ -231,11 +264,13 @@ OPD_DEFAULT_ITEMS = [
     {"description": "Pathology Charges", "amount": 0},
     {"description": "X-Ray/ECG/USG Charges", "amount": 0},
     {"description": "Medicine Charges", "amount": 0},
-    {"description": "Service Charges", "amount": 0},
 ]
 IPD_DEFAULT_ITEMS = [
-    {"description": "Bed Charges", "amount": 0},
-    {"description": "Nursing Charges", "amount": 0},
+    {"description": "Consultation Charges", "amount": 0, "rate": 0, "days": 1, "is_daywise": True},
+    {"description": "Bed Charges", "amount": 0, "rate": 0, "days": 1, "is_daywise": True},
+    {"description": "Nursing Charges", "amount": 0, "rate": 0, "days": 1, "is_daywise": True},
+    {"description": "RMO Charges", "amount": 0, "rate": 0, "days": 1, "is_daywise": True},
+    {"description": "Ward Charges", "amount": 0, "rate": 0, "days": 1, "is_daywise": True},
     {"description": "OT Charges", "amount": 0},
     {"description": "Surgeon Charges", "amount": 0},
     {"description": "Assistant Charges", "amount": 0},
@@ -246,7 +281,6 @@ IPD_DEFAULT_ITEMS = [
     {"description": "Monitor/O2 Charges", "amount": 0},
     {"description": "Dressing Charges", "amount": 0},
     {"description": "Medicine Charges", "amount": 0},
-    {"description": "Service Charges", "amount": 0},
     {"description": "Registration Charges", "amount": 0},
 ]
 
@@ -358,12 +392,70 @@ class Handler(BaseHTTPRequestHandler):
                     conn.commit()
                     self.send_json({'id': rid, **b})
 
-            elif path.startswith('/api/doctors/') and len(parts) == 4:
+            elif path.startswith('/api/doctors/') and len(parts) == 4 and parts[3] != 'patients':
                 rid = parts[3]
                 if method == 'DELETE':
                     c.execute("DELETE FROM doctors WHERE id=?", (rid,))
                     conn.commit()
                     self.send_json({'success': True})
+
+            elif path.startswith('/api/doctors/') and len(parts) == 5 and parts[4] == 'patients':
+                doc_id = parts[3]
+                if method == 'GET':
+                    # Doctor analytics: get all OPD and IPD visits for doctor_id
+                    opd_rows = c.execute("""
+                        SELECT o.id, o.patient_name, o.age, o.gender, o.phone, o.symptoms, o.diagnosis,
+                               o.visit_date as visit_date, o.visit_time as visit_time, 'OPD' as type
+                        FROM outpatients o WHERE o.doctor_id=?
+                        ORDER BY o.visit_date DESC
+                    """, (doc_id,)).fetchall()
+
+                    ipd_rows = c.execute("""
+                        SELECT i.id, i.patient_name, i.age, i.gender, i.phone, i.diagnosis,
+                               i.admission_date as visit_date, i.admission_time as visit_time, 'IPD' as type,
+                               i.ward, i.bed_number, i.status
+                        FROM inpatients i WHERE i.doctor_id=?
+                        ORDER BY i.admission_date DESC
+                    """, (doc_id,)).fetchall()
+
+                    opd_list = [dict(r) for r in opd_rows]
+                    ipd_list = [dict(r) for r in ipd_rows]
+                    all_patients = sorted(opd_list + ipd_list, key=lambda x: x.get('visit_date',''), reverse=True)
+
+                    # Calculate weekly & monthly count
+                    today_dt = datetime.now()
+                    curr_week_start = today_dt.date() - timedelta(days=today_dt.weekday())
+                    curr_month_str = today_dt.strftime('%Y-%m')
+
+                    weekly_patients = []
+                    monthly_patients = []
+                    by_month = {}
+
+                    for p in all_patients:
+                        vdate_str = p.get('visit_date', '')
+                        if vdate_str:
+                            try:
+                                vdate = datetime.strptime(vdate_str[:10], '%Y-%m-%d').date()
+                                if vdate >= curr_week_start:
+                                    weekly_patients.append(p)
+                                mstr = vdate.strftime('%Y-%m')
+                                if mstr not in by_month:
+                                    by_month[mstr] = []
+                                by_month[mstr].append(p)
+                                if mstr == curr_month_str:
+                                    monthly_patients.append(p)
+                            except Exception:
+                                pass
+
+                    self.send_json({
+                        'all_patients': all_patients,
+                        'total_count': len(all_patients),
+                        'weekly_patients': weekly_patients,
+                        'weekly_count': len(weekly_patients),
+                        'monthly_patients': monthly_patients,
+                        'monthly_count': len(monthly_patients),
+                        'by_month': by_month
+                    })
 
             # ── REFERRAL DOCTORS ──
             elif path == '/api/referral_doctors':
@@ -381,12 +473,46 @@ class Handler(BaseHTTPRequestHandler):
                     conn.commit()
                     self.send_json({'id': rid, **b})
 
-            elif path.startswith('/api/referral_doctors/') and len(parts) == 4:
+            elif path.startswith('/api/referral_doctors/') and len(parts) == 4 and parts[3] != 'patients':
                 rid = parts[3]
                 if method == 'DELETE':
                     c.execute("DELETE FROM referral_doctors WHERE id=?", (rid,))
                     conn.commit()
                     self.send_json({'success': True})
+
+            elif path.startswith('/api/referral_doctors/') and len(parts) == 5 and parts[4] == 'patients':
+                ref_id = parts[3]
+                if method == 'GET':
+                    ref_doc = c.execute("SELECT * FROM referral_doctors WHERE id=?", (ref_id,)).fetchone()
+                    ref_name = ref_doc['name'] if ref_doc else ''
+
+                    opd_rows = c.execute("""
+                        SELECT o.id, o.patient_name, o.age, o.gender, o.phone, o.symptoms, o.diagnosis,
+                               o.visit_date as visit_date, o.visit_time as visit_time, 'OPD' as type,
+                               d.name as doctor_name
+                        FROM outpatients o LEFT JOIN doctors d ON o.doctor_id=d.id
+                        WHERE o.referred_by=? OR o.referred_by=?
+                        ORDER BY o.visit_date DESC
+                    """, (ref_id, ref_name)).fetchall()
+
+                    ipd_rows = c.execute("""
+                        SELECT i.id, i.patient_name, i.age, i.gender, i.phone, i.diagnosis,
+                               i.admission_date as visit_date, i.admission_time as visit_time, 'IPD' as type,
+                               i.ward, i.bed_number, i.status, d.name as doctor_name
+                        FROM inpatients i LEFT JOIN doctors d ON i.doctor_id=d.id
+                        WHERE i.referred_by=? OR i.referred_by=?
+                        ORDER BY i.admission_date DESC
+                    """, (ref_id, ref_name)).fetchall()
+
+                    opd_list = [dict(r) for r in opd_rows]
+                    ipd_list = [dict(r) for r in ipd_rows]
+                    all_referred = sorted(opd_list + ipd_list, key=lambda x: x.get('visit_date',''), reverse=True)
+
+                    self.send_json({
+                        'referral_doctor': dict(ref_doc) if ref_doc else {},
+                        'patients': all_referred,
+                        'total_count': len(all_referred)
+                    })
 
             # ── OUTPATIENTS ──
             elif path == '/api/outpatients':
@@ -450,17 +576,18 @@ class Handler(BaseHTTPRequestHandler):
                     if any(not b.get(k) for k in required):
                         return self.send_json({'error': 'Required fields missing'}, 400)
                     rid = str(uuid.uuid4())
+                    adv_paid = float(b.get('advance_paid') or 0)
                     c.execute("""INSERT INTO inpatients
                         (id,patient_name,age,gender,phone,address,emergency_contact,emergency_phone,
                          admission_date,admission_time,ward,bed_number,diagnosis,treatment,doctor_id,
-                         discharge_date,discharge_time,status,notes,photo_description,referred_by)
-                        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                         discharge_date,discharge_time,status,notes,photo_description,referred_by,advance_paid)
+                        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
                         (rid,b['patient_name'],b['age'],b['gender'],b['phone'],
                          b.get('address',''),b.get('emergency_contact',''),b.get('emergency_phone',''),
                          b['admission_date'],b['admission_time'],b['ward'],b['bed_number'],
                          b['diagnosis'],b.get('treatment',''),b['doctor_id'],
                          b.get('discharge_date',''),b.get('discharge_time',''),
-                         b.get('status','admitted'),b.get('notes',''),b.get('photo_description',''),b.get('referred_by','')))
+                         b.get('status','admitted'),b.get('notes',''),b.get('photo_description',''),b.get('referred_by',''),adv_paid))
                     conn.commit()
                     self.send_json({'id': rid, **b})
 
@@ -468,17 +595,18 @@ class Handler(BaseHTTPRequestHandler):
                 rid = parts[3]
                 if method == 'PUT':
                     b = self.read_body()
+                    adv_paid = float(b.get('advance_paid') or 0)
                     c.execute("""UPDATE inpatients SET
                         patient_name=?,age=?,gender=?,phone=?,address=?,
                         emergency_contact=?,emergency_phone=?,admission_date=?,admission_time=?,
                         ward=?,bed_number=?,diagnosis=?,treatment=?,doctor_id=?,
-                        discharge_date=?,discharge_time=?,status=?,notes=?,photo_description=?,referred_by=? WHERE id=?""",
+                        discharge_date=?,discharge_time=?,status=?,notes=?,photo_description=?,referred_by=?,advance_paid=? WHERE id=?""",
                         (b['patient_name'],b['age'],b['gender'],b['phone'],b.get('address',''),
                          b.get('emergency_contact',''),b.get('emergency_phone',''),
                          b['admission_date'],b['admission_time'],b['ward'],b['bed_number'],
                          b['diagnosis'],b.get('treatment',''),b['doctor_id'],
                          b.get('discharge_date',''),b.get('discharge_time',''),
-                         b.get('status','admitted'),b.get('notes',''),b.get('photo_description',''),b.get('referred_by',''),rid))
+                         b.get('status','admitted'),b.get('notes',''),b.get('photo_description',''),b.get('referred_by',''),adv_paid,rid))
                     conn.commit()
                     self.send_json({'success': True})
                 elif method == 'DELETE':
@@ -494,11 +622,11 @@ class Handler(BaseHTTPRequestHandler):
                 elif method == 'PUT':
                     b = self.read_body()
                     c.execute("""UPDATE hospital_settings SET
-                        hospital_name=?, tagline=?, address=?, phone=?, reg_no=?, logo_data=?
+                        hospital_name=?, tagline=?, address=?, phone=?, reg_no=?, logo_data=?, ward_tariffs_json=?
                         WHERE id=1""",
                         (b.get('hospital_name','MediCare HMS'), b.get('tagline',''),
                          b.get('address',''), b.get('phone',''), b.get('reg_no',''),
-                         b.get('logo_data','')))
+                         b.get('logo_data',''), b.get('ward_tariffs_json','{}')))
                     conn.commit()
                     row = c.execute("SELECT * FROM hospital_settings WHERE id=1").fetchone()
                     self.send_json(dict(row))
@@ -540,19 +668,22 @@ class Handler(BaseHTTPRequestHandler):
                         return self.send_json({'error': 'UTR / transaction code required for online payment'}, 400)
                     items = b['items']
                     total = sum(float(it.get('amount') or 0) for it in items)
+                    adv_paid = float(b.get('advance_paid') or 0)
+                    net_total = float(b.get('net_total') if b.get('net_total') is not None else max(0, total - adv_paid))
                     rid = str(uuid.uuid4())
                     bill_no = next_bill_no(c, b['bill_type'])
                     c.execute("""INSERT INTO bills
                         (id,bill_no,bill_type,bill_date,patient_name,age,gender,address,phone,
                          indoor_no,admission_date,discharge_date,diagnostic,doctor_id,items_json,
-                         total,payment_mode,utr_code,outpatient_id,inpatient_id)
-                        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                         total,payment_mode,utr_code,outpatient_id,inpatient_id,advance_paid,net_total)
+                        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
                         (rid, bill_no, b['bill_type'], b['bill_date'], b['patient_name'],
                          str(b.get('age','')), b.get('gender',''), b.get('address',''),
                          b.get('phone',''), b.get('indoor_no',''), b.get('admission_date',''),
                          b.get('discharge_date',''), b.get('diagnostic',''), b['doctor_id'],
                          json.dumps(items), total, b.get('payment_mode','cash'),
-                         b.get('utr_code',''), b.get('outpatient_id',''), b.get('inpatient_id','')))
+                         b.get('utr_code',''), b.get('outpatient_id',''), b.get('inpatient_id',''),
+                         adv_paid, net_total))
                     conn.commit()
                     row = c.execute("""SELECT b.*, d.name as doctor_name, d.specialization
                                         FROM bills b JOIN doctors d ON b.doctor_id=d.id
@@ -568,6 +699,86 @@ class Handler(BaseHTTPRequestHandler):
                     self.send_json(dict(row) if row else {'error':'Not found'}, 200 if row else 404)
                 elif method == 'DELETE':
                     c.execute("DELETE FROM bills WHERE id=?", (rid,))
+                    conn.commit()
+                    self.send_json({'success': True})
+
+            # ── MTP (Medical Termination of Pregnancy) ──
+            elif path == '/api/mtp':
+                if method == 'GET':
+                    q = parse_qs(parsed.query)
+                    sql = """SELECT m.*, d.name as doctor_name
+                              FROM mtp_records m LEFT JOIN doctors d ON m.doctor_id=d.id WHERE 1=1"""
+                    args = []
+                    if q.get('date_from'):
+                        sql += " AND m.entry_date>=?"; args.append(q['date_from'][0])
+                    if q.get('date_to'):
+                        sql += " AND m.entry_date<=?"; args.append(q['date_to'][0])
+                    if q.get('search'):
+                        sql += " AND (m.patient_name LIKE ? OR m.entry_no LIKE ?)"
+                        term = f"%{q['search'][0]}%"; args += [term, term]
+                    sql += " ORDER BY m.entry_date DESC, m.created_at DESC"
+                    rows = c.execute(sql, args).fetchall()
+                    self.send_json([dict(r) for r in rows])
+
+                elif method == 'POST':
+                    b = self.read_body()
+                    required = ['entry_date','patient_name']
+                    if any(not b.get(k) for k in required):
+                        return self.send_json({'error': 'Required fields missing'}, 400)
+                    rid = b.get('id') or str(uuid.uuid4())
+                    entry_no_val = (b.get('entry_no') or '').strip()
+                    existing = c.execute("SELECT id, entry_no FROM mtp_records WHERE id=?", (rid,)).fetchone()
+                    if existing:
+                        final_entry_no = entry_no_val if entry_no_val else existing['entry_no']
+                        c.execute("""UPDATE mtp_records SET
+                            entry_no=?, entry_date=?, patient_name=?, age=?, husband_father_name=?, address=?, contact=?,
+                            weeks=?, doctor_id=?, referred_by=?, indication=?, notes=?, extra_fields_json=?
+                            WHERE id=?""",
+                            (final_entry_no, b['entry_date'], b['patient_name'], str(b.get('age','')),
+                             b.get('husband_father_name',''), b.get('address',''), b.get('contact',''),
+                             b.get('weeks',''), b.get('doctor_id',''), b.get('referred_by',''),
+                             b.get('indication',''), b.get('notes',''),
+                             json.dumps(b.get('extra_fields', {})), rid))
+                    else:
+                        seq = c.execute("SELECT COUNT(*) FROM mtp_records").fetchone()[0] + 1
+                        final_entry_no = entry_no_val if entry_no_val else f"RMO-{datetime.now().year}-{seq:04d}"
+                        c.execute("""INSERT INTO mtp_records
+                            (id,entry_no,entry_date,patient_name,age,husband_father_name,address,contact,
+                             weeks,doctor_id,referred_by,indication,notes,extra_fields_json)
+                            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                            (rid, final_entry_no, b['entry_date'], b['patient_name'], str(b.get('age','')),
+                             b.get('husband_father_name',''), b.get('address',''), b.get('contact',''),
+                             b.get('weeks',''), b.get('doctor_id',''), b.get('referred_by',''),
+                             b.get('indication',''), b.get('notes',''),
+                             json.dumps(b.get('extra_fields', {}))))
+                    conn.commit()
+                    row = c.execute("""SELECT m.*, d.name as doctor_name
+                                        FROM mtp_records m LEFT JOIN doctors d ON m.doctor_id=d.id
+                                        WHERE m.id=?""", (rid,)).fetchone()
+                    self.send_json(dict(row))
+
+            elif path.startswith('/api/mtp/') and len(parts) == 4:
+                rid = parts[3]
+                if method == 'GET':
+                    row = c.execute("""SELECT m.*, d.name as doctor_name
+                                        FROM mtp_records m LEFT JOIN doctors d ON m.doctor_id=d.id
+                                        WHERE m.id=?""", (rid,)).fetchone()
+                    self.send_json(dict(row) if row else {'error':'Not found'}, 200 if row else 404)
+                elif method == 'PUT':
+                    b = self.read_body()
+                    c.execute("""UPDATE mtp_records SET
+                        entry_date=?, patient_name=?, age=?, husband_father_name=?, address=?, contact=?,
+                        weeks=?, doctor_id=?, referred_by=?, indication=?, notes=?, extra_fields_json=?
+                        WHERE id=?""",
+                        (b['entry_date'], b['patient_name'], str(b.get('age','')),
+                         b.get('husband_father_name',''), b.get('address',''), b.get('contact',''),
+                         b.get('weeks',''), b.get('doctor_id',''), b.get('referred_by',''),
+                         b.get('indication',''), b.get('notes',''),
+                         json.dumps(b.get('extra_fields', {})), rid))
+                    conn.commit()
+                    self.send_json({'success': True})
+                elif method == 'DELETE':
+                    c.execute("DELETE FROM mtp_records WHERE id=?", (rid,))
                     conn.commit()
                     self.send_json({'success': True})
 

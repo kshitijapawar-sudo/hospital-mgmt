@@ -40,6 +40,16 @@
       --radius-lg: 12px;
     }
 
+    /* Hide number input spinners for clean manual entry */
+    input[type=number]::-webkit-outer-spin-button,
+    input[type=number]::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+    input[type=number] {
+      -moz-appearance: textfield;
+    }
+
     body {
       font-family: 'Inter', sans-serif;
       background: var(--snow);
@@ -1511,6 +1521,15 @@
         </svg>
         Sonography
       </div>
+      <div class="nav-item" data-nav="mtp" onclick="showSection('mtp')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
+          <polyline points="14 2 14 8 20 8" />
+          <line x1="12" y1="18" x2="12" y2="12" />
+          <line x1="9" y1="15" x2="15" y2="15" />
+        </svg>
+        RMO Records
+      </div>
       <div class="nav-item" data-nav="doctors" onclick="showSection('doctors')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M12 2a5 5 0 100 10A5 5 0 0012 2z" />
@@ -1548,6 +1567,13 @@
           <line x1="5" y1="12" x2="19" y2="12" />
         </svg>
         New Sonography
+      </div>
+      <div class="nav-item" onclick="showSection('mtp'); setTimeout(()=>switchMtpTab('new'),100)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="12" y1="5" x2="12" y2="19" />
+          <line x1="5" y1="12" x2="19" y2="12" />
+        </svg>
+        New RMO Record
       </div>
     </nav>
 
@@ -1757,6 +1783,18 @@
 
         <!-- NEW BILL -->
         <div class="tab-pane active" id="pane-billnew">
+          <div class="form-group full" style="margin-bottom:18px; background:#EBF4FF; padding:14px 16px; border-radius:10px; border:1px solid #BFDBFE;">
+            <label style="color:var(--navy); font-weight:700; font-size:13.5px; display:flex; align-items:center; gap:6px;">
+              🔍 Select Registered Patient (Auto-Fill Bill Details)
+            </label>
+            <div style="font-size:11.5px; color:var(--slate); margin-top:2px;">
+              Optional: Select a registered OPD/IPD patient to auto-fill their details, or type patient details directly in the fields below.
+            </div>
+            <select id="bill-patient-select" onchange="autoPopulateBillPatient(this.value)" style="margin-top:8px; font-weight:600; color:var(--navy); background:white;">
+              <option value="">-- Select Registered Patient to Auto-Fill Bill (Optional) --</option>
+            </select>
+          </div>
+
           <div class="type-toggle">
             <button id="bt-opd" class="active" onclick="setBillType('OPD')">OPD — Outdoor Patient Department</button>
             <button id="bt-ipd" onclick="setBillType('IPD')">IPD — Indoor Patient Department</button>
@@ -1811,11 +1849,11 @@
               </div>
               <div class="form-group" id="bill-admdate-wrap" style="display:none">
                 <label>Date of Admission</label>
-                <input type="date" id="bill-admdate" />
+                <input type="date" id="bill-admdate" onchange="recalcIpdDaysFromDates()" />
               </div>
               <div class="form-group" id="bill-disdate-wrap" style="display:none">
                 <label>D.O. Discharge</label>
-                <input type="date" id="bill-disdate" />
+                <input type="date" id="bill-disdate" onchange="recalcIpdDaysFromDates()" />
               </div>
               <div class="form-group full">
                 <label>Diagnostic / Notes</label>
@@ -1825,23 +1863,35 @@
           </div>
 
           <div class="form-section">
-            <div class="form-section-title">Charges</div>
+            <div class="form-section-title">Charges Breakdown</div>
             <table class="items-table">
               <thead>
                 <tr>
-                  <th style="width:40px">S.No</th>
+                  <th style="width:36px">S.No</th>
                   <th>Description</th>
-                  <th style="width:130px">Amount (₹)</th>
+                  <th style="width:110px; text-align:right;">Rate/Day (₹)</th>
+                  <th style="width:90px; text-align:center;">Days</th>
+                  <th style="width:130px; text-align:right;">Amount (₹)</th>
                   <th style="width:36px"></th>
                 </tr>
               </thead>
               <tbody id="bill-items-tbody"></tbody>
             </table>
-            <button class="btn btn-secondary btn-sm" style="margin-top:10px" onclick="addBillItem('','')">+ Add
-              Item</button>
-            <div class="items-total-row">
-              <span class="label">Total</span>
-              <span class="amount" id="bill-total">₹0</span>
+            <button class="btn btn-secondary btn-sm" style="margin-top:10px" onclick="addBillItem('','')">+ Add Item</button>
+
+            <div style="margin-top:16px; padding-top:14px; border-top:2px solid var(--navy); display:flex; flex-direction:column; align-items:flex-end; gap:8px;">
+              <div style="display:flex; justify-content:space-between; width:280px; font-size:13.5px; font-weight:600; color:var(--slate);">
+                <span>Subtotal:</span>
+                <span id="bill-subtotal">₹0.00</span>
+              </div>
+              <div id="bill-advance-row" style="display:flex; justify-content:space-between; width:280px; font-size:13.5px; font-weight:600; color:var(--danger); align-items:center;">
+                <span>Advance Paid (-):</span>
+                <input type="number" id="bill-advance-paid" value="0" min="0" step="0.01" oninput="recalcBillTotal()" style="width:110px; padding:4px 8px; text-align:right; border:1px solid var(--border); border-radius:6px; font-weight:700; color:var(--danger);" />
+              </div>
+              <div class="items-total-row" style="border-top:1px solid var(--border); width:280px; padding-top:8px; margin-top:4px;">
+                <span class="label">Net Payable</span>
+                <span class="amount" id="bill-total">₹0.00</span>
+              </div>
             </div>
           </div>
 
@@ -2394,6 +2444,223 @@
         </div>
       </div>
 
+      <!-- ═══ MTP (MEDICAL TERMINATION OF PREGNANCY) ═══ -->
+      <div id="section-mtp" class="section-pane" style="display:none">
+        <div class="page-title">
+          <div>
+            <h2>RMO Records</h2>
+            <p>Manage and maintain official RMO register entries &amp; consent forms</p>
+          </div>
+          <button class="btn btn-primary" onclick="switchMtpTab('new')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="12" y1="5" x2="12" y2="19" />
+              <line x1="5" y1="12" x2="19" y2="12" />
+            </svg>
+            New RMO Entry
+          </button>
+        </div>
+
+        <div class="tab-header">
+          <button class="tab-btn active" id="tab-mtprec-btn" onclick="switchMtpTab('records')">
+            RMO Register List <span class="tab-count" id="tab-mtp-count">0</span>
+          </button>
+          <button class="tab-btn" id="tab-mtpnew-btn" onclick="switchMtpTab('new')">New RMO Record</button>
+        </div>
+
+        <div class="tab-pane active" id="pane-mtprecords">
+          <div class="table-card">
+            <div class="table-toolbar filter-bar">
+              <input class="search-input" type="text" placeholder="Search patient or RMO entry no…"
+                oninput="filterMtp({search:this.value})" />
+              <label style="font-size:12px;color:var(--text-muted)">From <input type="date"
+                  onchange="filterMtp({date_from:this.value})" /></label>
+              <label style="font-size:12px;color:var(--text-muted)">To <input type="date"
+                  onchange="filterMtp({date_to:this.value})" /></label>
+            </div>
+            <table>
+              <thead>
+                <tr>
+                  <th>Entry No</th>
+                  <th>Patient</th>
+                  <th>Age</th>
+                  <th>Weeks</th>
+                  <th>Doctor</th>
+                  <th>Referred By</th>
+                  <th>Date</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="mtp-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="tab-pane" id="pane-mtpnew">
+          <div class="settings-card" style="max-width:850px;">
+            <input type="hidden" id="mtp-edit-id" />
+            <h3 id="mtp-form-title" style="color:var(--navy);font-size:17px;font-weight:700;margin-bottom:4px;">Register New RMO Record</h3>
+            <p style="color:var(--text-muted);font-size:12.5px;margin-bottom:18px;">Fill in details below for RMO Opinion Form (Form I) and FORM C (Consent Form)</p>
+
+            <!-- SECTION 1: GENERAL & PATIENT DETAILS -->
+            <div class="form-section" style="margin-bottom:18px;">
+              <div class="form-section-title" style="color:var(--navy);font-weight:700;font-size:13px;">Section 1: General &amp; Patient Details</div>
+              <div class="form-grid cols-3">
+                <div class="form-group">
+                  <label>RMO / MTP No. <small style="color:var(--text-muted);font-weight:normal;">(Manual Entry)</small></label>
+                  <input type="text" id="mtp-manual-no" placeholder="Auto-generated if blank (e.g. RMO-001)" />
+                </div>
+                <div class="form-group">
+                  <label>Entry Date <span class="req">*</span></label>
+                  <input type="date" id="mtp-date" />
+                </div>
+                <div class="form-group">
+                  <label>Patient Full Name (Block Letters) <span class="req">*</span></label>
+                  <input type="text" id="mtp-name" placeholder="Full name of pregnant woman" />
+                </div>
+                <div class="form-group">
+                  <label>Age (Years) <span class="req">*</span></label>
+                  <input type="number" id="mtp-age" placeholder="e.g. 26" min="0" />
+                </div>
+                <div class="form-group">
+                  <label>Daughter / Wife of</label>
+                  <input type="text" id="mtp-husband" placeholder="Husband or Father's Name" />
+                </div>
+                <div class="form-group">
+                  <label>Weeks of Pregnancy</label>
+                  <input type="text" id="mtp-weeks" placeholder="e.g. 8 weeks" />
+                </div>
+                <div class="form-group">
+                  <label>Contact Number</label>
+                  <input type="tel" id="mtp-contact" placeholder="Phone number" />
+                </div>
+                <div class="form-group" style="grid-column:span 2">
+                  <label>Present Residing Address <span class="req">*</span></label>
+                  <input type="text" id="mtp-address" placeholder="At present residing at..." />
+                </div>
+                <div class="form-group full">
+                  <label>Permanent Address (if different from present)</label>
+                  <input type="text" id="mtp-perm-address" placeholder="Permanent address of pregnant woman" />
+                </div>
+              </div>
+            </div>
+
+            <!-- SECTION 2: RMO OPINION FORM (FORM I) DETAILS -->
+            <div class="form-section" style="background:#f8fafc;padding:14px;border-radius:8px;border:1px solid var(--border);margin-bottom:18px;">
+              <div class="form-section-title" style="color:var(--navy);font-weight:700;font-size:13px;margin-bottom:10px;">
+                Section 2: RMO Opinion Form (Form I - Regulation 3)
+              </div>
+              <div class="form-grid cols-3">
+                <div class="form-group" style="grid-column:span 2">
+                  <label>Consulting RMO / Registered Medical Practitioner (RMP 1) <span class="req">*</span></label>
+                  <select id="mtp-doctor"></select>
+                </div>
+                <div class="form-group">
+                  <label>Admission / Serial No.</label>
+                  <input type="text" id="mtp-serial-no" placeholder="Serial No. in Register" />
+                </div>
+                <div class="form-group full">
+                  <label>Second Practitioner (RMP 2) - Optional (if required for co-opinion)</label>
+                  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">
+                    <input type="text" id="mtp-rmp2-name" placeholder="RMP 2 Name" />
+                    <input type="text" id="mtp-rmp2-qual" placeholder="Qualifications (MD, DGO)" />
+                    <input type="text" id="mtp-rmp2-address" placeholder="Full Address of RMP 2" />
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label>Referred By</label>
+                  <select id="mtp-referred" onchange="toggleSelectOther(this, 'mtp-referred-other')">
+                    <option value="">Select referral doctor</option>
+                    <option value="Self / Walk-in">Self / Walk-in</option>
+                    <option value="Other">Other (specify)</option>
+                  </select>
+                  <input type="text" id="mtp-referred-other" placeholder="Specify referring doctor" style="display:none;margin-top:6px;padding:6px 10px;font-size:13px;border:1px solid var(--border);border-radius:6px;width:100%" />
+                </div>
+                <div class="form-group full">
+                  <label style="font-weight:700;color:var(--navy);margin-bottom:6px;display:block;">
+                    Reason for Termination (Regulation 3 - Select appropriate item i to v):
+                  </label>
+                  <select id="mtp-reason-code" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;">
+                    <option value="(i) In order to save the life of the pregnant woman">(i) In order to save the life of the pregnant woman</option>
+                    <option value="(ii) In order to prevent grave injury to the physical and mental health of the pregnant woman" selected>(ii) In order to prevent grave injury to physical and mental health of pregnant woman</option>
+                    <option value="(iii) In view of the substantial risk that if the child was born it would suffer from such physical or mental abnormalities as to be seriously handicapped">(iii) Substantial risk that child would suffer physical/mental handicap</option>
+                    <option value="(iv) As the pregnancy is alleged by pregnant woman to have been caused by rape">(iv) Pregnancy alleged to be caused by rape</option>
+                    <option value="(v) As the pregnancy has occurred as result of failure of any contraceptive device or methods used by married woman or her husband for the purpose of limiting the number of children">(v) Failure of contraceptive device/method used by married woman or husband</option>
+                  </select>
+                </div>
+                <div class="form-group full">
+                  <label>Additional Indication &amp; Notes</label>
+                  <input type="text" id="mtp-indication" placeholder="e.g. Contraceptive failure / Medical indication" />
+                </div>
+                <div class="form-group full">
+                  <label>Procedure &amp; Treatment Notes</label>
+                  <textarea id="mtp-notes" placeholder="Notes on procedure and observation"></textarea>
+                </div>
+              </div>
+            </div>
+
+            <!-- SECTION 3: FORM C CONSENT DETAILS -->
+            <div class="form-section" style="background:#fff8f6;padding:14px;border-radius:8px;border:1px solid #fed7d7;margin-bottom:18px;">
+              <div class="form-section-title" style="color:#c53030;font-weight:700;font-size:13px;margin-bottom:10px;">
+                Section 3: FORM C (Consent Form - Rule 5)
+              </div>
+              <div class="form-grid cols-3">
+                <div class="form-group">
+                  <label>Place of Termination</label>
+                  <input type="text" id="mtp-place" placeholder="e.g. Thane" value="Thane" />
+                </div>
+                <div class="form-group">
+                  <label>State</label>
+                  <input type="text" id="mtp-state" placeholder="e.g. Maharashtra" value="Maharashtra" />
+                </div>
+                <div class="form-group full" style="margin-top:6px;">
+                  <label style="display:flex;align-items:center;gap:8px;font-weight:700;color:var(--navy);cursor:pointer;">
+                    <input type="checkbox" id="mtp-is-guardian" onchange="toggleGuardianSection(this.checked)" style="width:16px;height:16px;accent-color:var(--teal);" />
+                    Patient is Minor or Lunatic (Requires Guardian Consent)
+                  </label>
+                </div>
+              </div>
+
+              <!-- Guardian Consent Fields -->
+              <div id="mtp-guardian-box" style="display:none;margin-top:14px;padding:12px;background:#fff;border:1px dashed #cbd5e0;border-radius:6px;">
+                <div style="font-size:12px;font-weight:700;color:var(--navy);margin-bottom:10px;">
+                  Guardian Consent Details (To be filled where woman is minor or lunatic):
+                </div>
+                <div class="form-grid cols-3">
+                  <div class="form-group" style="grid-column:span 2">
+                    <label>Guardian Full Name <span class="req">*</span></label>
+                    <input type="text" id="mtp-guardian-name" placeholder="Full name of Guardian" />
+                  </div>
+                  <div class="form-group">
+                    <label>Guardian Age</label>
+                    <input type="number" id="mtp-guardian-age" placeholder="Years" min="0" />
+                  </div>
+                  <div class="form-group" style="grid-column:span 2">
+                    <label>Guardian Daughter / Wife of</label>
+                    <input type="text" id="mtp-guardian-dw" placeholder="Father or Husband of Guardian" />
+                  </div>
+                  <div class="form-group full">
+                    <label>Guardian Present Address</label>
+                    <input type="text" id="mtp-guardian-pres-addr" placeholder="Guardian present address" />
+                  </div>
+                  <div class="form-group full">
+                    <label>Guardian Permanent Address</label>
+                    <input type="text" id="mtp-guardian-perm-addr" placeholder="Guardian permanent address" />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="modal-footer" style="border-top:1px solid var(--border);padding:16px 0;margin-top:14px;display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;">
+              <button class="btn btn-secondary" onclick="resetMtpForm()">Reset</button>
+              <button class="btn btn-outline" onclick="saveMtp(false)">Save Only</button>
+              <button class="btn btn-primary" onclick="saveMtp(true, 'form_i')">🖨️ Save &amp; Print Form I (RMO)</button>
+              <button class="btn btn-primary" style="background:#2b6cb0;" onclick="saveMtp(true, 'form_c')">🖨️ Save &amp; Print Form C</button>
+              <button class="btn btn-primary" style="background:#4a5568;" onclick="saveMtp(true, 'package')">🖨️ Save &amp; Print Full Set</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- ═══ DOCTORS ═══ -->
       <div id="section-doctors" class="section-pane" style="display:none">
         <div class="page-title">
@@ -2428,7 +2695,7 @@
             <p>Configure hospital identity used on receipts and printed bills</p>
           </div>
         </div>
-        <div class="settings-card">
+        <div class="settings-card" style="max-width:820px;">
           <div class="logo-upload">
             <div class="logo-preview" id="settings-logo-preview">
               <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="#A0AEC0" stroke-width="1.5"
@@ -2475,7 +2742,7 @@
         </div>
 
         <!-- User Password Management Card (Doctor Only) -->
-        <div class="settings-card" id="user-password-card" style="margin-top:24px;display:none;">
+        <div class="settings-card" id="user-password-card" style="margin-top:24px; max-width:820px; display:none;">
           <h3 style="color:var(--navy);font-size:16px;font-weight:700;margin-bottom:6px;">🔐 User Password Management</h3>
           <p style="color:var(--text-muted);font-size:12.5px;margin-bottom:18px;">As a Doctor, you can change the password for any user account (Doctor, Operator, or Receptionist).</p>
           
@@ -2496,6 +2763,59 @@
           </div>
           <div class="modal-footer" style="border-top:1px solid var(--border);padding:16px 0;margin-top:16px">
             <button class="btn btn-primary" onclick="updateUserPassword()">Update Password</button>
+          </div>
+        </div>
+
+        <!-- Ward Tariff List Card -->
+        <div class="settings-card" style="margin-top:24px; max-width:820px;">
+          <h3 style="color:var(--navy);font-size:16px;font-weight:700;margin-bottom:4px;">🏷️ Ward Fixed Tariff List</h3>
+          <p style="color:var(--text-muted);font-size:12.5px;margin-bottom:18px;">Set fixed daily rates for each ward. When creating an IPD bill, selecting the ward will auto-fill these daily rates into the bill.</p>
+          
+          <div style="overflow-x:auto;">
+            <table style="width:100%; border-collapse:collapse; margin-bottom:16px; min-width:650px;">
+              <thead>
+                <tr style="background:var(--snow); border-bottom:2px solid var(--border);">
+                  <th style="padding:10px 12px; font-size:12px; text-align:left;">Ward Name</th>
+                  <th style="padding:10px 12px; font-size:12px; text-align:right;">Bed Charge / Day (₹)</th>
+                  <th style="padding:10px 12px; font-size:12px; text-align:right;">Nursing Charge / Day (₹)</th>
+                  <th style="padding:10px 12px; font-size:12px; text-align:right;">Consulting / Day (₹)</th>
+                  <th style="padding:10px 12px; font-size:12px; text-align:right;">RMO Charge / Day (₹)</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td style="padding:8px 10px; font-weight:600; color:var(--navy);">General Ward</td>
+                  <td style="padding:6px;"><input type="number" id="tariff-gen-bed" placeholder="0" min="0" style="width:100%; padding:6px 8px; text-align:right; border:1px solid var(--border); border-radius:6px;" /></td>
+                  <td style="padding:6px;"><input type="number" id="tariff-gen-nurse" placeholder="0" min="0" style="width:100%; padding:6px 8px; text-align:right; border:1px solid var(--border); border-radius:6px;" /></td>
+                  <td style="padding:6px;"><input type="number" id="tariff-gen-doc" placeholder="0" min="0" style="width:100%; padding:6px 8px; text-align:right; border:1px solid var(--border); border-radius:6px;" /></td>
+                  <td style="padding:6px;"><input type="number" id="tariff-gen-rmo" placeholder="0" min="0" style="width:100%; padding:6px 8px; text-align:right; border:1px solid var(--border); border-radius:6px;" /></td>
+                </tr>
+                <tr>
+                  <td style="padding:8px 10px; font-weight:600; color:var(--navy);">Semi Special Ward</td>
+                  <td style="padding:6px;"><input type="number" id="tariff-semi-bed" placeholder="0" min="0" style="width:100%; padding:6px 8px; text-align:right; border:1px solid var(--border); border-radius:6px;" /></td>
+                  <td style="padding:6px;"><input type="number" id="tariff-semi-nurse" placeholder="0" min="0" style="width:100%; padding:6px 8px; text-align:right; border:1px solid var(--border); border-radius:6px;" /></td>
+                  <td style="padding:6px;"><input type="number" id="tariff-semi-doc" placeholder="0" min="0" style="width:100%; padding:6px 8px; text-align:right; border:1px solid var(--border); border-radius:6px;" /></td>
+                  <td style="padding:6px;"><input type="number" id="tariff-semi-rmo" placeholder="0" min="0" style="width:100%; padding:6px 8px; text-align:right; border:1px solid var(--border); border-radius:6px;" /></td>
+                </tr>
+                <tr>
+                  <td style="padding:8px 10px; font-weight:600; color:var(--navy);">Special Ward</td>
+                  <td style="padding:6px;"><input type="number" id="tariff-spec-bed" placeholder="0" min="0" style="width:100%; padding:6px 8px; text-align:right; border:1px solid var(--border); border-radius:6px;" /></td>
+                  <td style="padding:6px;"><input type="number" id="tariff-spec-nurse" placeholder="0" min="0" style="width:100%; padding:6px 8px; text-align:right; border:1px solid var(--border); border-radius:6px;" /></td>
+                  <td style="padding:6px;"><input type="number" id="tariff-spec-doc" placeholder="0" min="0" style="width:100%; padding:6px 8px; text-align:right; border:1px solid var(--border); border-radius:6px;" /></td>
+                  <td style="padding:6px;"><input type="number" id="tariff-spec-rmo" placeholder="0" min="0" style="width:100%; padding:6px 8px; text-align:right; border:1px solid var(--border); border-radius:6px;" /></td>
+                </tr>
+                <tr>
+                  <td style="padding:8px 10px; font-weight:600; color:var(--navy);">ICU / CCU</td>
+                  <td style="padding:6px;"><input type="number" id="tariff-icu-bed" placeholder="0" min="0" style="width:100%; padding:6px 8px; text-align:right; border:1px solid var(--border); border-radius:6px;" /></td>
+                  <td style="padding:6px;"><input type="number" id="tariff-icu-nurse" placeholder="0" min="0" style="width:100%; padding:6px 8px; text-align:right; border:1px solid var(--border); border-radius:6px;" /></td>
+                  <td style="padding:6px;"><input type="number" id="tariff-icu-doc" placeholder="0" min="0" style="width:100%; padding:6px 8px; text-align:right; border:1px solid var(--border); border-radius:6px;" /></td>
+                  <td style="padding:6px;"><input type="number" id="tariff-icu-rmo" placeholder="0" min="0" style="width:100%; padding:6px 8px; text-align:right; border:1px solid var(--border); border-radius:6px;" /></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div style="text-align:right; margin-top:12px;">
+            <button class="btn btn-primary" onclick="saveTariffSettings()">Save Tariff List</button>
           </div>
         </div>
       </div>
@@ -2712,6 +3032,10 @@
               </select>
             </div>
             <div class="form-group">
+              <label>Advance Paid (₹)</label>
+              <input type="number" id="in-advance" placeholder="0" min="0" step="0.01" />
+            </div>
+            <div class="form-group">
               <label>Admission Date <span class="req">*</span></label>
               <input type="date" id="in-adm-date" />
             </div>
@@ -2890,6 +3214,117 @@
     </div>
   </div>
 
+  <!-- ════════════ DOCTOR PATIENT ANALYTICS MODAL ════════════ -->
+  <div class="modal-overlay" id="modal-doctor-analytics">
+    <div class="modal" style="max-width:840px;">
+      <div class="modal-header">
+        <div>
+          <h3 id="doc-analytics-name">Doctor Patient Report</h3>
+          <p id="doc-analytics-spec" style="color:var(--teal); font-weight:600;">Specialization</p>
+        </div>
+        <button class="modal-close" onclick="closeModal('modal-doctor-analytics')">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18" />
+            <line x1="6" y1="6" x2="18" y2="18" />
+          </svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="stats-grid" style="grid-template-columns: 1fr 1fr 1fr; margin-bottom:18px;">
+          <div class="stat-card teal">
+            <div class="label">This Week's Patients</div>
+            <div class="value" id="doc-stat-weekly">0</div>
+            <div class="sub">Checked this week</div>
+          </div>
+          <div class="stat-card">
+            <div class="label">This Month's Patients</div>
+            <div class="value" id="doc-stat-monthly">0</div>
+            <div class="sub">Checked this month</div>
+          </div>
+          <div class="stat-card warn">
+            <div class="label">Total Lifetime Patients</div>
+            <div class="value" id="doc-stat-total">0</div>
+            <div class="sub">All-time count</div>
+          </div>
+        </div>
+
+        <div class="tab-header" style="margin-bottom:16px;">
+          <button class="tab-btn active" id="tab-docp-weekly-btn" onclick="switchDocPatientTab('weekly')">This Week's Patients (<span id="doc-tab-cnt-weekly">0</span>)</button>
+          <button class="tab-btn" id="tab-docp-monthly-btn" onclick="switchDocPatientTab('monthly')">Monthly Patients (<span id="doc-tab-cnt-monthly">0</span>)</button>
+          <button class="tab-btn" id="tab-docp-all-btn" onclick="switchDocPatientTab('all')">All Patients (<span id="doc-tab-cnt-all">0</span>)</button>
+        </div>
+
+        <div id="doc-month-select-wrap" style="display:none; margin-bottom:14px; align-items:center; gap:10px;">
+          <label style="font-weight:600; font-size:13px; color:var(--slate);">Select Month:</label>
+          <select id="doc-month-select" onchange="renderDocMonthlyPatients(this.value)" style="padding:6px 12px; border:1px solid var(--border); border-radius:6px; font-weight:600; color:var(--navy);"></select>
+        </div>
+
+        <div class="table-card" style="max-height:360px; overflow-y:auto;">
+          <table>
+            <thead>
+              <tr>
+                <th>Patient Name</th>
+                <th>Type</th>
+                <th>Age / Gender</th>
+                <th>Contact</th>
+                <th>Visit / Admission Date</th>
+                <th>Diagnosis / Symptoms</th>
+              </tr>
+            </thead>
+            <tbody id="doc-patient-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeModal('modal-doctor-analytics')">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════ REFERRAL DOCTOR PATIENT LIST MODAL ════════════ -->
+  <div class="modal-overlay" id="modal-referral-analytics">
+    <div class="modal" style="max-width:840px;">
+      <div class="modal-header">
+        <div>
+          <h3 id="ref-analytics-name">Referral Doctor Patient List</h3>
+          <p id="ref-analytics-hosp" style="color:var(--teal); font-weight:600;">Hospital / Clinic</p>
+        </div>
+        <button class="modal-close" onclick="closeModal('modal-referral-analytics')">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18" />
+            <line x1="6" y1="6" x2="18" y2="18" />
+          </svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="stat-card teal" style="margin-bottom:18px; display:inline-block; padding:14px 24px;">
+          <div class="label">Total Referred Patients</div>
+          <div class="value" id="ref-stat-total">0</div>
+          <div class="sub">Patients sent to hospital</div>
+        </div>
+
+        <div class="table-card" style="max-height:360px; overflow-y:auto;">
+          <table>
+            <thead>
+              <tr>
+                <th>Patient Name</th>
+                <th>Type</th>
+                <th>Age / Gender</th>
+                <th>Contact</th>
+                <th>Attending Doctor</th>
+                <th>Date</th>
+              </tr>
+            </thead>
+            <tbody id="ref-patient-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeModal('modal-referral-analytics')">Close</button>
+      </div>
+    </div>
+  </div>
+
   <!-- TOAST -->
   <div class="toast" id="toast"></div>
 
@@ -2915,9 +3350,14 @@
     let hospitalSettings = {};
     let bills = [], billFilters = {};
     let sonoRecords = [], sonoFilters = {};
+    let mtpRecords = [], mtpFilters = {};
     let currentBillType = 'OPD';
     let billItems = [];
     let billTemplates = { OPD: [], IPD: [] };
+    let wardTariffs = {};
+    let currentDocAnalytics = null;
+    let docPatientActiveTab = 'weekly';
+    let currentRefAnalytics = null;
 
     const INDICATION_LIST = [
       'To diagnose intra-uterine and/or ectopic pregnancy and confirm viability',
@@ -2975,15 +3415,13 @@
       if (name === 'dashboard') loadDashboard();
       if (name === 'patients') { loadOutpatients(); loadInpatients(); }
       if (name === 'doctors') loadDoctors();
-      if (name === 'billing') { loadBills(); }
+      if (name === 'billing') { loadBills(); populateRegisteredPatientsDropdown(); }
       if (name === 'sonography') { loadSonoRecords(); }
-      if (name === 'settings') { loadSettingsForm(); }
+      if (name === 'mtp') { loadMtpRecords(); }
+      if (name === 'settings') { loadSettingsForm(); loadTariffSettings(); }
     }
 
     // ── LIVE SYNC ──────────────────────────────────────────────
-    // Quietly re-fetches whatever list is on screen every few seconds, so a
-    // bill/patient/entry the receptionist just saved shows up on the doctor's
-    // screen (and vice versa) without anyone pressing refresh.
     function anyModalOpen() {
       return !!document.querySelector('.modal-overlay.open');
     }
@@ -3000,6 +3438,8 @@
           await loadBills();
         } else if (currentSection === 'sonography') {
           await loadSonoRecords();
+        } else if (currentSection === 'mtp') {
+          await loadMtpRecords();
         } else if (currentSection === 'doctors') {
           await loadDoctors();
         }
@@ -3007,6 +3447,7 @@
         // Silent — a brief Wi-Fi hiccup shouldn't spam a toast every few seconds.
       }
     }
+    setInterval(silentRefresh, 6000);
     setInterval(silentRefresh, 6000);
 
     // ── AUTO-UPDATE DETECTION ─────────────────────────────────
@@ -3052,13 +3493,17 @@
       await loadInpatientsData();
       await loadSettingsData();
       await loadBillTemplates();
+      await loadMtpRecordsData();
+      loadTariffSettings();
       populateDoctorDropdowns();
       populateReferralDoctorDropdowns();
+      populateRegisteredPatientsDropdown();
       applyHospitalIdentity();
       renderIndicationCheckboxes();
       resetBillForm();
       const today = new Date().toISOString().split('T')[0];
-      document.getElementById('sono-date').value = today;
+      if (document.getElementById('sono-date')) document.getElementById('sono-date').value = today;
+      if (document.getElementById('mtp-date')) document.getElementById('mtp-date').value = today;
       loadDashboard();
     }
 
@@ -3078,6 +3523,10 @@
       const r = await fetch(API + '/inpatients');
       inpatients = await r.json();
     }
+    async function loadMtpRecordsData() {
+      const r = await fetch(API + '/mtp');
+      mtpRecords = await r.json();
+    }
     async function loadSettingsData() {
       const r = await fetch(API + '/settings');
       hospitalSettings = await r.json();
@@ -3089,11 +3538,12 @@
 
     function populateDoctorDropdowns() {
       const opts = doctors.map(d => `<option value="${d.id}">${d.name} — ${d.specialization}</option>`).join('');
-      document.getElementById('out-doctor').innerHTML = '<option value="">Select doctor</option>' + opts;
-      document.getElementById('in-doctor').innerHTML = '<option value="">Select doctor</option>' + opts;
-      document.getElementById('bill-doctor').innerHTML = '<option value="">Select consultant doctor</option>' + opts;
-      document.getElementById('sono-doctor').innerHTML = '<option value="">Select doctor</option>' + opts;
-      document.getElementById('bill-filter-doctor').innerHTML = '<option value="">All Doctors</option>' + opts;
+      if (document.getElementById('out-doctor')) document.getElementById('out-doctor').innerHTML = '<option value="">Select doctor</option>' + opts;
+      if (document.getElementById('in-doctor')) document.getElementById('in-doctor').innerHTML = '<option value="">Select doctor</option>' + opts;
+      if (document.getElementById('bill-doctor')) document.getElementById('bill-doctor').innerHTML = '<option value="">Select consultant doctor</option>' + opts;
+      if (document.getElementById('sono-doctor')) document.getElementById('sono-doctor').innerHTML = '<option value="">Select doctor</option>' + opts;
+      if (document.getElementById('mtp-doctor')) document.getElementById('mtp-doctor').innerHTML = '<option value="">Select doctor</option>' + opts;
+      if (document.getElementById('bill-filter-doctor')) document.getElementById('bill-filter-doctor').innerHTML = '<option value="">All Doctors</option>' + opts;
     }
 
     // Helper functions for select + 'Other' custom text inputs
@@ -3507,15 +3957,18 @@
       grid.innerHTML = doctors.map(d => {
         const initials = d.name.replace('Dr. ', '').split(' ').map(w => w[0]).join('').slice(0, 2);
         return `
-    <div class="doctor-card">
+    <div class="doctor-card" style="cursor:pointer;" onclick="openDoctorAnalyticsModal('${d.id}')">
       <div class="doc-avatar">${initials}</div>
       <div class="doc-info" style="flex:1">
         <div class="name">${d.name}</div>
         <div class="spec">${d.specialization}</div>
         <div class="contact">${d.phone || '—'}</div>
         <div class="contact">${d.email || '—'}</div>
+        <div style="margin-top:8px;">
+          <button class="btn btn-secondary btn-sm" onclick="event.stopPropagation(); openDoctorAnalyticsModal('${d.id}')">📊 Patient Report</button>
+        </div>
       </div>
-      <button class="btn btn-danger btn-sm" style="align-self:flex-start" onclick="deleteDoctor('${d.id}')">Remove</button>
+      <button class="btn btn-danger btn-sm" style="align-self:flex-start" onclick="event.stopPropagation(); deleteDoctor('${d.id}')">Remove</button>
     </div>`;
       }).join('') || '<p style="color:var(--text-muted);grid-column:1/-1">No doctors registered.</p>';
     }
@@ -3582,15 +4035,18 @@
       grid.innerHTML = referralDoctors.map(d => {
         const initials = d.name.replace('Dr. ', '').split(' ').map(w => w[0]).join('').slice(0, 2);
         return `
-    <div class="doctor-card">
+    <div class="doctor-card" style="cursor:pointer;" onclick="openReferralAnalyticsModal('${d.id}')">
       <div class="doc-avatar" style="background:var(--slate)">${initials}</div>
       <div class="doc-info" style="flex:1">
         <div class="name">${d.name}</div>
         <div class="spec">${d.specialization || 'General'}</div>
         <div class="contact">${d.phone || '—'}</div>
         <div class="contact">${d.hospital || '—'}</div>
+        <div style="margin-top:8px;">
+          <button class="btn btn-secondary btn-sm" onclick="event.stopPropagation(); openReferralAnalyticsModal('${d.id}')">📋 Referred Patients</button>
+        </div>
       </div>
-      <button class="btn btn-danger btn-sm" style="align-self:flex-start" onclick="deleteReferralDoctor('${d.id}')">Remove</button>
+      <button class="btn btn-danger btn-sm" style="align-self:flex-start" onclick="event.stopPropagation(); deleteReferralDoctor('${d.id}')">Remove</button>
     </div>`;
       }).join('') || '<p style="color:var(--text-muted);grid-column:1/-1">No referral doctors registered.</p>';
     }
@@ -3712,8 +4168,180 @@
     }
 
     // ══════════════════════════════════════════════
-    // ── BILLING ──
     // ══════════════════════════════════════════════
+    // ── BILLING & WARD TARIFFS ──
+    // ══════════════════════════════════════════════
+    function populateRegisteredPatientsDropdown() {
+      const sel = document.getElementById('bill-patient-select');
+      if (!sel) return;
+      let opts = '<option value="">-- Select Registered Patient to Auto-Fill Bill (Optional) --</option>';
+      opts += '<optgroup label="Admitted / IPD Patients">';
+      if (inpatients && inpatients.length > 0) {
+        inpatients.forEach(p => {
+          opts += `<option value="ipd_${p.id}">[IPD] ${escapeHtml(p.patient_name)} — Ward: ${escapeHtml(p.ward)} (Bed: ${escapeHtml(p.bed_number)})</option>`;
+        });
+      } else {
+        opts += `<option disabled value="">(No Admitted / IPD Patients Registered)</option>`;
+      }
+      opts += '</optgroup><optgroup label="Outpatient / OPD Records">';
+      if (outpatients && outpatients.length > 0) {
+        outpatients.forEach(p => {
+          opts += `<option value="opd_${p.id}">[OPD] ${escapeHtml(p.patient_name)} — Phone: ${escapeHtml(p.phone)}</option>`;
+        });
+      } else {
+        opts += `<option disabled value="">(No OPD Patients Registered)</option>`;
+      }
+      opts += '</optgroup>';
+      sel.innerHTML = opts;
+    }
+
+    function getWardTariffKey(wardName) {
+      if (!wardName) return 'General Ward';
+      const w = wardName.toLowerCase();
+      if (w.includes('semi')) return 'Semi Special';
+      if (w.includes('special') || w.includes('private')) return 'Special';
+      if (w.includes('icu') || w.includes('ccu')) return 'ICU';
+      return 'General Ward';
+    }
+
+    function loadTariffSettings() {
+      let tariffs = {
+        'General Ward': { bed: 500, nursing: 200, doc: 300, rmo: 200 },
+        'Semi Special': { bed: 1000, nursing: 400, doc: 500, rmo: 300 },
+        'Special': { bed: 2000, nursing: 600, doc: 800, rmo: 500 },
+        'ICU': { bed: 4000, nursing: 1000, doc: 1200, rmo: 800 }
+      };
+      if (hospitalSettings.ward_tariffs_json) {
+        try { tariffs = { ...tariffs, ...JSON.parse(hospitalSettings.ward_tariffs_json) }; } catch (e) {}
+      }
+      wardTariffs = tariffs;
+
+      const setVal = (id, v) => { const el = document.getElementById(id); if (el) el.value = v ?? 0; };
+      setVal('tariff-gen-bed', tariffs['General Ward']?.bed);
+      setVal('tariff-gen-nurse', tariffs['General Ward']?.nursing);
+      setVal('tariff-gen-doc', tariffs['General Ward']?.doc);
+      setVal('tariff-gen-rmo', tariffs['General Ward']?.rmo);
+
+      setVal('tariff-semi-bed', tariffs['Semi Special']?.bed);
+      setVal('tariff-semi-nurse', tariffs['Semi Special']?.nursing);
+      setVal('tariff-semi-doc', tariffs['Semi Special']?.doc);
+      setVal('tariff-semi-rmo', tariffs['Semi Special']?.rmo);
+
+      setVal('tariff-spec-bed', tariffs['Special']?.bed);
+      setVal('tariff-spec-nurse', tariffs['Special']?.nursing);
+      setVal('tariff-spec-doc', tariffs['Special']?.doc);
+      setVal('tariff-spec-rmo', tariffs['Special']?.rmo);
+
+      setVal('tariff-icu-bed', tariffs['ICU']?.bed);
+      setVal('tariff-icu-nurse', tariffs['ICU']?.nursing);
+      setVal('tariff-icu-doc', tariffs['ICU']?.doc);
+      setVal('tariff-icu-rmo', tariffs['ICU']?.rmo);
+    }
+
+    async function saveTariffSettings() {
+      const getVal = (id) => parseFloat(document.getElementById(id)?.value) || 0;
+      const tariffs = {
+        'General Ward': { bed: getVal('tariff-gen-bed'), nursing: getVal('tariff-gen-nurse'), doc: getVal('tariff-gen-doc'), rmo: getVal('tariff-gen-rmo') },
+        'Semi Special': { bed: getVal('tariff-semi-bed'), nursing: getVal('tariff-semi-nurse'), doc: getVal('tariff-semi-doc'), rmo: getVal('tariff-semi-rmo') },
+        'Special': { bed: getVal('tariff-spec-bed'), nursing: getVal('tariff-spec-nurse'), doc: getVal('tariff-spec-doc'), rmo: getVal('tariff-spec-rmo') },
+        'ICU': { bed: getVal('tariff-icu-bed'), nursing: getVal('tariff-icu-nurse'), doc: getVal('tariff-icu-doc'), rmo: getVal('tariff-icu-rmo') }
+      };
+
+      const body = { ...hospitalSettings, ward_tariffs_json: JSON.stringify(tariffs) };
+      const r = await fetch(API + '/settings', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+      if (r.ok) {
+        hospitalSettings = await r.json();
+        wardTariffs = tariffs;
+        showToast('Ward tariff settings saved successfully');
+      } else showToast('Failed to save tariff settings', 'error');
+    }
+
+    function autoPopulateBillPatient(val) {
+      if (!val) return;
+      const isIpd = val.startsWith('ipd_');
+      const id = val.replace(/^(ipd_|opd_)/, '');
+
+      if (isIpd) {
+        const p = inpatients.find(x => x.id === id);
+        if (!p) return;
+        setBillType('IPD');
+        document.getElementById('bill-name').value = p.patient_name;
+        document.getElementById('bill-age').value = p.age + ' Yrs';
+        setSelectVal('bill-gender', 'bill-gender-other', p.gender);
+        document.getElementById('bill-phone').value = p.phone;
+        document.getElementById('bill-address').value = p.address || '';
+        document.getElementById('bill-doctor').value = p.doctor_id || '';
+        document.getElementById('bill-indoor').value = `IPD-${p.id.slice(0, 8).toUpperCase()}`;
+        document.getElementById('bill-admdate').value = p.admission_date || '';
+        document.getElementById('bill-disdate').value = p.discharge_date || new Date().toISOString().split('T')[0];
+        document.getElementById('bill-advance-paid').value = p.advance_paid || 0;
+
+        applyWardTariffToBill(p.ward);
+      } else {
+        const p = outpatients.find(x => x.id === id);
+        if (!p) return;
+        setBillType('OPD');
+        document.getElementById('bill-name').value = p.patient_name;
+        document.getElementById('bill-age').value = p.age + ' Yrs';
+        setSelectVal('bill-gender', 'bill-gender-other', p.gender);
+        document.getElementById('bill-phone').value = p.phone;
+        document.getElementById('bill-address').value = p.address || '';
+        document.getElementById('bill-doctor').value = p.doctor_id || '';
+        document.getElementById('bill-advance-paid').value = 0;
+      }
+    }
+
+    function recalcIpdDaysFromDates() {
+      const adm = document.getElementById('bill-admdate').value;
+      const dis = document.getElementById('bill-disdate').value || new Date().toISOString().split('T')[0];
+      let days = 1;
+      if (adm) {
+        const d1 = new Date(adm);
+        const d2 = new Date(dis);
+        const diff = Math.ceil((d2 - d1) / (1000 * 60 * 60 * 24));
+        days = Math.max(1, diff);
+      }
+      billItems.forEach(it => {
+        if (it.days !== undefined || it.is_daywise) {
+          it.days = days;
+          it.amount = (it.rate || 0) * days;
+        }
+      });
+      renderBillItems();
+    }
+
+    function applyWardTariffToBill(wardName) {
+      const tKey = getWardTariffKey(wardName);
+      const t = wardTariffs[tKey] || { bed: 500, nursing: 200, doc: 300, rmo: 200 };
+
+      const adm = document.getElementById('bill-admdate').value;
+      const dis = document.getElementById('bill-disdate').value || new Date().toISOString().split('T')[0];
+      let days = 1;
+      if (adm) {
+        const d1 = new Date(adm);
+        const d2 = new Date(dis);
+        days = Math.max(1, Math.ceil((d2 - d1) / (1000 * 60 * 60 * 24)));
+      }
+
+      const map = {
+        'Consultation Charges': t.doc || 300,
+        'Bed Charges': t.bed || 500,
+        'Nursing Charges': t.nursing || 200,
+        'RMO Charges': t.rmo || 200,
+        'Ward Charges': t.rmo || 200
+      };
+
+      billItems.forEach(it => {
+        if (map[it.description] !== undefined) {
+          it.rate = map[it.description];
+          it.days = days;
+          it.amount = it.rate * days;
+          it.is_daywise = true;
+        }
+      });
+      renderBillItems();
+    }
+
     function switchBillingTab(tab) {
       document.querySelectorAll('#section-billing .tab-btn').forEach(b => b.classList.remove('active'));
       document.querySelectorAll('#section-billing .tab-pane').forEach(p => p.classList.remove('active'));
@@ -3733,6 +4361,8 @@
       document.getElementById('bill-indoor-wrap').style.display = showIpd ? 'flex' : 'none';
       document.getElementById('bill-admdate-wrap').style.display = showIpd ? 'flex' : 'none';
       document.getElementById('bill-disdate-wrap').style.display = showIpd ? 'flex' : 'none';
+      document.getElementById('bill-advance-row').style.display = showIpd ? 'flex' : 'none';
+
       billItems = (billTemplates[type] || []).map(it => ({ ...it }));
       renderBillItems();
     }
@@ -3740,6 +4370,8 @@
     function resetBillForm(type) {
       ['bill-name', 'bill-age', 'bill-phone', 'bill-address', 'bill-indoor', 'bill-admdate', 'bill-disdate', 'bill-diagnostic', 'bill-utr']
         .forEach(id => document.getElementById(id).value = '');
+      if (document.getElementById('bill-patient-select')) document.getElementById('bill-patient-select').value = '';
+      if (document.getElementById('bill-advance-paid')) document.getElementById('bill-advance-paid').value = 0;
       setSelectVal('bill-gender', 'bill-gender-other', '');
       document.getElementById('bill-doctor').value = '';
       document.getElementById('bill-date').value = new Date().toISOString().split('T')[0];
@@ -3748,7 +4380,7 @@
     }
 
     function addBillItem(desc, amount) {
-      billItems.push({ description: desc || '', amount: amount || 0 });
+      billItems.push({ description: desc || '', rate: amount || 0, days: 1, amount: amount || 0 });
       renderBillItems();
     }
     function removeBillItem(idx) {
@@ -3756,25 +4388,46 @@
       renderBillItems();
     }
     function updateBillItem(idx, field, value) {
-      billItems[idx][field] = field === 'amount' ? (parseFloat(value) || 0) : value;
+      const item = billItems[idx];
+      if (field === 'rate' || field === 'days') {
+        item[field] = parseFloat(value) || 0;
+        item.amount = (item.rate || 0) * (item.days || 1);
+      } else if (field === 'amount') {
+        item.amount = parseFloat(value) || 0;
+      } else {
+        item[field] = value;
+      }
       recalcBillTotal();
     }
 
     function renderBillItems() {
       const tbody = document.getElementById('bill-items-tbody');
-      tbody.innerHTML = billItems.map((it, i) => `
+      tbody.innerHTML = billItems.map((it, i) => {
+        const rateVal = it.rate !== undefined ? it.rate : (it.amount || 0);
+        const daysVal = it.days !== undefined ? it.days : 1;
+        return `
     <tr>
       <td>${i + 1}</td>
       <td><input type="text" value="${escapeAttr(it.description)}" oninput="updateBillItem(${i},'description',this.value)" placeholder="Description" /></td>
-      <td><input type="number" min="0" step="0.01" value="${it.amount}" oninput="updateBillItem(${i},'amount',this.value)" /></td>
+      <td><input type="number" min="0" step="0.01" value="${rateVal}" oninput="updateBillItem(${i},'rate',this.value)" style="width:100px; text-align:right;" /></td>
+      <td><input type="number" min="1" step="1" value="${daysVal}" oninput="updateBillItem(${i},'days',this.value)" style="width:70px; text-align:center;" /></td>
+      <td><input type="number" min="0" step="0.01" value="${it.amount || 0}" oninput="updateBillItem(${i},'amount',this.value)" style="width:110px; text-align:right;" /></td>
       <td><button class="rm-item" onclick="removeBillItem(${i})" title="Remove">&times;</button></td>
-    </tr>`).join('');
+    </tr>`;
+      }).join('');
       recalcBillTotal();
     }
 
     function recalcBillTotal() {
-      const total = billItems.reduce((sum, it) => sum + (parseFloat(it.amount) || 0), 0);
-      document.getElementById('bill-total').textContent = '₹' + total.toLocaleString('en-IN', { minimumFractionDigits: 2 });
+      const subtotal = billItems.reduce((sum, it) => sum + (parseFloat(it.amount) || 0), 0);
+      const advPaid = parseFloat(document.getElementById('bill-advance-paid')?.value) || 0;
+      const netTotal = Math.max(0, subtotal - advPaid);
+
+      const subEl = document.getElementById('bill-subtotal');
+      if (subEl) subEl.textContent = '₹' + subtotal.toLocaleString('en-IN', { minimumFractionDigits: 2 });
+      
+      const totalEl = document.getElementById('bill-total');
+      if (totalEl) totalEl.textContent = '₹' + netTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 });
     }
 
     function setPayMode(mode) {
@@ -3786,6 +4439,10 @@
 
     async function saveBill(andPrint) {
       const payMode = document.querySelector('input[name=paymode]:checked').value;
+      const subtotal = billItems.reduce((sum, it) => sum + (parseFloat(it.amount) || 0), 0);
+      const advPaid = parseFloat(document.getElementById('bill-advance-paid')?.value) || 0;
+      const netTotal = Math.max(0, subtotal - advPaid);
+
       const body = {
         bill_type: currentBillType,
         bill_date: document.getElementById('bill-date').value,
@@ -3801,7 +4458,9 @@
         doctor_id: document.getElementById('bill-doctor').value,
         items: billItems.filter(it => it.description.trim() !== ''),
         payment_mode: payMode,
-        utr_code: document.getElementById('bill-utr').value.trim()
+        utr_code: document.getElementById('bill-utr').value.trim(),
+        advance_paid: advPaid,
+        net_total: netTotal
       };
       if (!body.patient_name || !body.bill_date || !body.doctor_id)
         return showToast('Please fill patient name, date and consultant doctor', 'error');
@@ -3836,14 +4495,16 @@
 
     function renderBills() {
       const tbody = document.getElementById('bill-tbody');
-      tbody.innerHTML = bills.length ? bills.map(b => `
+      tbody.innerHTML = bills.length ? bills.map(b => {
+        const amt = b.net_total !== undefined && b.net_total > 0 ? b.net_total : b.total;
+        return `
     <tr>
       <td><div class="patient-name">${b.bill_no}</div></td>
       <td><span class="badge badge-${b.bill_type === 'IPD' ? 'admitted' : 'discharged'}">${b.bill_type}</span></td>
       <td>${b.patient_name}</td>
       <td><small style="color:var(--teal)">${b.doctor_name}</small></td>
       <td>${formatDate(b.bill_date)}</td>
-      <td><b>₹${Number(b.total).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</b></td>
+      <td><b>₹${Number(amt).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</b></td>
       <td><span class="badge badge-${b.payment_mode === 'online' ? 'discharged' : 'admitted'}">${b.payment_mode === 'online' ? 'Online' : 'Cash'}</span></td>
       <td>
         <div class="actions-cell">
@@ -3851,7 +4512,8 @@
           <button class="btn btn-danger btn-sm" onclick="deleteBill('${b.id}')">Delete</button>
         </div>
       </td>
-    </tr>`).join('') :
+    </tr>`;
+      }).join('') :
         `<tr><td colspan="8"><div class="empty-state"><p>No bills found</p></div></td></tr>`;
     }
 
@@ -3870,18 +4532,26 @@
         ? `<img src="${s.logo_data}" />`
         : `<img src="logo.jpg" />`;
 
+      const advPaid = parseFloat(b.advance_paid) || 0;
+      const subtotal = parseFloat(b.total) || 0;
+      const netTotal = b.net_total !== undefined ? parseFloat(b.net_total) : Math.max(0, subtotal - advPaid);
+
       let html = '';
 
       if (b.bill_type === 'IPD') {
-        const ipdRows = items.map((it, i) => `
+        const ipdRows = items.map((it, i) => {
+          const rateStr = it.rate ? `₹${Number(it.rate).toLocaleString('en-IN')}` : '';
+          const daysStr = it.days ? `${it.days} day(s)` : '';
+          const detailStr = (rateStr && daysStr) ? ` (${rateStr} × ${daysStr})` : '';
+          return `
       <tr>
         <td style="border:1px solid #000; text-align:center; padding:6px 8px;"><b>${i + 1}.</b></td>
-        <td style="border:1px solid #000; padding:6px 8px; font-weight: bold;">${escapeHtml(it.description)}</td>
+        <td style="border:1px solid #000; padding:6px 8px; font-weight: bold;">${escapeHtml(it.description)}${detailStr}</td>
         <td style="border:1px solid #000; text-align:right; padding:6px 8px;">
-          ${it.amount ? Number(it.amount).toLocaleString('en-IN', { minimumFractionDigits: 2 }) : ''}
+          ${it.amount ? Number(it.amount).toLocaleString('en-IN', { minimumFractionDigits: 2 }) : '0.00'}
         </td>
-      </tr>
-    `).join('');
+      </tr>`;
+        }).join('');
 
         html = `
     <div style="border-bottom: 2px solid #000; padding-bottom: 8px; display: flex; align-items: center; gap: 16px;">
@@ -3931,8 +4601,17 @@
       <tbody>
         ${ipdRows}
         <tr>
-          <td colspan="2" style="border:1px solid #000; text-align:right; padding:8px 16px; font-weight:bold; font-size:15px;">TOTAL</td>
-          <td style="border:1px solid #000; text-align:right; padding:8px; font-weight:bold; font-size:16px;">${Number(b.total).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+          <td colspan="2" style="border:1px solid #000; text-align:right; padding:6px 16px; font-weight:bold; font-size:14px;">SUBTOTAL</td>
+          <td style="border:1px solid #000; text-align:right; padding:6px; font-weight:bold; font-size:14px;">${subtotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+        </tr>
+        ${advPaid > 0 ? `
+        <tr>
+          <td colspan="2" style="border:1px solid #000; text-align:right; padding:6px 16px; font-weight:bold; font-size:14px; color:#C0392B;">ADVANCE PAID (-)</td>
+          <td style="border:1px solid #000; text-align:right; padding:6px; font-weight:bold; font-size:14px; color:#C0392B;">- ${advPaid.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+        </tr>` : ''}
+        <tr>
+          <td colspan="2" style="border:1px solid #000; text-align:right; padding:8px 16px; font-weight:bold; font-size:16px; background:#f5f5f5;">NET PAYABLE TOTAL</td>
+          <td style="border:1px solid #000; text-align:right; padding:8px; font-weight:bold; font-size:17px; background:#f5f5f5;">₹${netTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
         </tr>
       </tbody>
     </table>
@@ -4740,6 +5419,571 @@
     }
     function escapeAttr(str) { return escapeHtml(str); }
 
+    // ══════════════════════════════════════════════
+    // ── MTP (MEDICAL TERMINATION OF PREGNANCY) ──
+    // ══════════════════════════════════════════════
+    function switchMtpTab(tab) {
+      document.querySelectorAll('#section-mtp .tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('#section-mtp .tab-pane').forEach(p => p.classList.remove('active'));
+      document.getElementById('tab-mtp' + (tab === 'new' ? 'new' : 'rec') + '-btn').classList.add('active');
+      document.getElementById('pane-mtp' + (tab === 'new' ? 'new' : 'records')).classList.add('active');
+    }
+
+    async function loadMtpRecords() {
+      await loadMtpRecordsData();
+      renderMtp();
+      document.getElementById('tab-mtp-count').textContent = mtpRecords.length;
+    }
+
+    function filterMtp(patch) {
+      Object.assign(mtpFilters, patch);
+      renderMtp();
+    }
+
+    function toggleGuardianSection(show) {
+      const box = document.getElementById('mtp-guardian-box');
+      if (box) box.style.display = show ? 'block' : 'none';
+    }
+
+    function renderMtp() {
+      const search = (mtpFilters.search || '').toLowerCase();
+      const dateFrom = mtpFilters.date_from || '';
+      const dateTo = mtpFilters.date_to || '';
+
+      const data = mtpRecords.filter(m => {
+        const matchSearch = !search || (m.patient_name + m.entry_no + (m.doctor_name || '')).toLowerCase().includes(search);
+        const matchFrom = !dateFrom || m.entry_date >= dateFrom;
+        const matchTo = !dateTo || m.entry_date <= dateTo;
+        return matchSearch && matchFrom && matchTo;
+      });
+
+      const tbody = document.getElementById('mtp-tbody');
+      tbody.innerHTML = data.length ? data.map(m => `
+        <tr>
+          <td><div class="patient-name">${escapeHtml(m.entry_no)}</div></td>
+          <td>${escapeHtml(m.patient_name)}</td>
+          <td>${m.age || '—'}</td>
+          <td>${m.weeks || '—'}</td>
+          <td><small style="color:var(--teal)">${escapeHtml(m.doctor_name || '—')}</small></td>
+          <td>${truncate(m.referred_by, 25) || '—'}</td>
+          <td>${formatDate(m.entry_date)}</td>
+          <td>
+            <div class="actions-cell" style="display:flex;gap:4px;flex-wrap:wrap;">
+              <button class="btn btn-secondary btn-sm" title="Print RMO Opinion Form (Form I)" onclick="printRmoFormI(mtpRecords.find(x=>x.id==='${m.id}'))">🖨️ Form I</button>
+              <button class="btn btn-secondary btn-sm" title="Print Consent Form (Form C)" style="background:#edf2f7;color:#2b6cb0;border-color:#cbd5e0;" onclick="printFormC(mtpRecords.find(x=>x.id==='${m.id}'))">🖨️ Form C</button>
+              <button class="btn btn-secondary btn-sm" title="Print Complete Package" onclick="printMtpPackage(mtpRecords.find(x=>x.id==='${m.id}'))">📦 Full Set</button>
+              <button class="btn btn-outline btn-sm" onclick="editMtp('${m.id}')">✏️ Edit</button>
+              <button class="btn btn-danger btn-sm" onclick="deleteMtp('${m.id}')">Delete</button>
+            </div>
+          </td>
+        </tr>`).join('') : `<tr><td colspan="8"><div class="empty-state"><p>No MTP / RMO records found</p></div></td></tr>`;
+    }
+
+    function resetMtpForm() {
+      const editEl = document.getElementById('mtp-edit-id');
+      if (editEl) editEl.value = '';
+      const titleEl = document.getElementById('mtp-form-title');
+      if (titleEl) titleEl.textContent = 'Register New RMO Record';
+
+      ['mtp-manual-no', 'mtp-name', 'mtp-age', 'mtp-weeks', 'mtp-contact', 'mtp-husband', 'mtp-address', 'mtp-perm-address',
+       'mtp-serial-no', 'mtp-rmp2-name', 'mtp-rmp2-qual', 'mtp-rmp2-address', 'mtp-indication', 'mtp-notes',
+       'mtp-guardian-name', 'mtp-guardian-age', 'mtp-guardian-dw', 'mtp-guardian-pres-addr', 'mtp-guardian-perm-addr'
+      ].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = '';
+      });
+
+      if (document.getElementById('mtp-date')) document.getElementById('mtp-date').value = new Date().toISOString().split('T')[0];
+      if (document.getElementById('mtp-doctor')) document.getElementById('mtp-doctor').value = '';
+      if (document.getElementById('mtp-place')) document.getElementById('mtp-place').value = 'Thane';
+      if (document.getElementById('mtp-state')) document.getElementById('mtp-state').value = 'Maharashtra';
+      if (document.getElementById('mtp-reason-code')) document.getElementById('mtp-reason-code').selectedIndex = 1;
+      setSelectVal('mtp-referred', 'mtp-referred-other', '');
+
+      const gChk = document.getElementById('mtp-is-guardian');
+      if (gChk) { gChk.checked = false; toggleGuardianSection(false); }
+    }
+
+    function editMtp(id) {
+      const m = mtpRecords.find(x => x.id === id);
+      if (!m) return;
+
+      let ef = {};
+      try {
+        ef = typeof m.extra_fields_json === 'string' ? JSON.parse(m.extra_fields_json || '{}') : (m.extra_fields_json || {});
+      } catch(e) { ef = {}; }
+
+      document.getElementById('mtp-edit-id').value = m.id;
+      document.getElementById('mtp-form-title').textContent = `Edit RMO Record (${m.entry_no})`;
+
+      const manualNoEl = document.getElementById('mtp-manual-no');
+      if (manualNoEl) manualNoEl.value = m.entry_no || '';
+
+      document.getElementById('mtp-date').value = m.entry_date || '';
+      document.getElementById('mtp-name').value = m.patient_name || '';
+      document.getElementById('mtp-age').value = m.age || '';
+      document.getElementById('mtp-husband').value = m.husband_father_name || '';
+      document.getElementById('mtp-weeks').value = m.weeks || '';
+      document.getElementById('mtp-contact').value = m.contact || '';
+      document.getElementById('mtp-address').value = m.address || '';
+      document.getElementById('mtp-perm-address').value = ef.permanent_address || '';
+      document.getElementById('mtp-doctor').value = m.doctor_id || '';
+      document.getElementById('mtp-serial-no').value = ef.serial_no || m.entry_no || '';
+      document.getElementById('mtp-rmp2-name').value = ef.rmp2_name || '';
+      document.getElementById('mtp-rmp2-qual').value = ef.rmp2_qual || '';
+      document.getElementById('mtp-rmp2-address').value = ef.rmp2_address || '';
+      document.getElementById('mtp-reason-code').value = ef.reason_code || '(ii) In order to prevent grave injury to the physical and mental health of the pregnant woman';
+      document.getElementById('mtp-indication').value = m.indication || '';
+      document.getElementById('mtp-notes').value = m.notes || '';
+      document.getElementById('mtp-place').value = ef.place || 'Thane';
+      document.getElementById('mtp-state').value = ef.state || 'Maharashtra';
+
+      setSelectVal('mtp-referred', 'mtp-referred-other', m.referred_by || '');
+
+      const isG = ef.is_minor_guardian || false;
+      const gChk = document.getElementById('mtp-is-guardian');
+      if (gChk) { gChk.checked = isG; toggleGuardianSection(isG); }
+
+      document.getElementById('mtp-guardian-name').value = ef.guardian_name || '';
+      document.getElementById('mtp-guardian-age').value = ef.guardian_age || '';
+      document.getElementById('mtp-guardian-dw').value = ef.guardian_daughter_wife || '';
+      document.getElementById('mtp-guardian-pres-addr').value = ef.guardian_present_address || '';
+      document.getElementById('mtp-guardian-perm-addr').value = ef.guardian_perm_address || '';
+
+      switchMtpTab('new');
+    }
+
+    async function saveMtp(andPrint, printType = 'form_i') {
+      const editId = document.getElementById('mtp-edit-id').value;
+
+      const isG = document.getElementById('mtp-is-guardian').checked;
+      const manualEntryNo = document.getElementById('mtp-manual-no') ? document.getElementById('mtp-manual-no').value.trim() : '';
+
+      const extraFields = {
+        permanent_address: document.getElementById('mtp-perm-address').value.trim(),
+        serial_no: document.getElementById('mtp-serial-no').value.trim() || manualEntryNo,
+        rmp2_name: document.getElementById('mtp-rmp2-name').value.trim(),
+        rmp2_qual: document.getElementById('mtp-rmp2-qual').value.trim(),
+        rmp2_address: document.getElementById('mtp-rmp2-address').value.trim(),
+        reason_code: document.getElementById('mtp-reason-code').value,
+        place: document.getElementById('mtp-place').value.trim() || 'Thane',
+        state: document.getElementById('mtp-state').value.trim() || 'Maharashtra',
+        is_minor_guardian: isG,
+        guardian_name: document.getElementById('mtp-guardian-name').value.trim(),
+        guardian_age: document.getElementById('mtp-guardian-age').value.trim(),
+        guardian_daughter_wife: document.getElementById('mtp-guardian-dw').value.trim(),
+        guardian_present_address: document.getElementById('mtp-guardian-pres-addr').value.trim(),
+        guardian_perm_address: document.getElementById('mtp-guardian-perm-addr').value.trim(),
+      };
+
+      const body = {
+        id: editId || undefined,
+        entry_no: manualEntryNo || undefined,
+        entry_date: document.getElementById('mtp-date').value,
+        patient_name: document.getElementById('mtp-name').value.trim(),
+        age: document.getElementById('mtp-age').value,
+        husband_father_name: document.getElementById('mtp-husband').value.trim(),
+        address: document.getElementById('mtp-address').value.trim(),
+        contact: document.getElementById('mtp-contact').value.trim(),
+        weeks: document.getElementById('mtp-weeks').value.trim(),
+        doctor_id: document.getElementById('mtp-doctor').value,
+        referred_by: getSelectVal('mtp-referred', 'mtp-referred-other'),
+        indication: document.getElementById('mtp-indication').value.trim(),
+        notes: document.getElementById('mtp-notes').value.trim(),
+        extra_fields: extraFields
+      };
+
+      if (!body.patient_name || !body.entry_date || !body.age || !body.doctor_id) {
+        return showToast('Patient name, entry date, age, and doctor are required', 'error');
+      }
+
+      if (isG && !extraFields.guardian_name) {
+        return showToast('Guardian full name is required for minor/lunatic consent', 'error');
+      }
+
+      const url = editId ? `${API}/mtp/${editId}` : `${API}/mtp`;
+      const method = editId ? 'PUT' : 'POST';
+
+      const r = await fetch(url, {
+        method: method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+
+      const data = await r.json();
+      if (r.ok) {
+        showToast(editId ? 'RMO Record updated successfully' : `RMO Record ${data.entry_no || ''} created successfully`);
+        resetMtpForm();
+        await loadMtpRecords();
+        switchMtpTab('records');
+
+        const recordToPrint = editId ? (mtpRecords.find(x => x.id === editId) || data) : data;
+        if (andPrint && recordToPrint) {
+          if (printType === 'form_c') {
+            printFormC(recordToPrint);
+          } else if (printType === 'package') {
+            printMtpPackage(recordToPrint);
+          } else {
+            printRmoFormI(recordToPrint);
+          }
+        }
+      } else {
+        showToast(data.error || 'Failed to save MTP record', 'error');
+      }
+    }
+
+    async function deleteMtp(id) {
+      if (!confirm('Delete this MTP record?')) return;
+      await fetch(`${API}/mtp/${id}`, { method: 'DELETE' });
+      showToast('MTP record deleted');
+      await loadMtpRecords();
+    }
+
+    function printMtp(m) {
+      printRmoFormI(m);
+    }
+
+    function printRmoFormI(m) {
+      const s = hospitalSettings;
+      let ef = {};
+      try {
+        ef = typeof m.extra_fields_json === 'string' ? JSON.parse(m.extra_fields_json || '{}') : (m.extra_fields_json || {});
+      } catch(e) { ef = {}; }
+
+      const doc = doctors.find(d => d.id === m.doctor_id) || {};
+      const docName = doc.name || m.doctor_name || 'Dr. Chandrakant P. Barure';
+      const docQual = doc.specialization || 'MD.DGO';
+      const docAddr = s.address || 'A-2, First floor Ganesh Darshan Building, Hari Niwas Circle, Thane (W) 400 602.';
+
+      const rmp2Name = ef.rmp2_name || '';
+      const rmp2Qual = ef.rmp2_qual || '';
+      const rmp2Addr = ef.rmp2_address || '';
+
+      const reasonText = ef.reason_code || m.indication || '(ii) In order to prevent grave injury to the physical and mental health of the pregnant woman.';
+      const placeStr = ef.place || 'Thane';
+      const dateStr = formatDate(m.entry_date);
+      const serialNo = ef.serial_no || m.entry_no || '';
+
+      const html = `
+        <div style="font-family:'Times New Roman', Times, serif; color:#000; padding:15px 25px; line-height:1.6; font-size:14px; max-width:800px; margin:0 auto;">
+          
+          <!-- TITLE / HEADER -->
+          <div style="text-align:center; margin-bottom: 20px;">
+            <h2 style="font-size:20px; font-weight:bold; margin:0 0 2px 0; text-transform:uppercase;">RMO Opinion Form</h2>
+            <h3 style="font-size:18px; font-weight:bold; margin:0 0 2px 0;">Form I</h3>
+            <div style="font-size:13px; font-style:italic;">(See Regulation 3)</div>
+          </div>
+
+          <!-- DOCTOR / RMP SECTION 1 -->
+          <div style="margin-bottom: 12px; line-height: 1.8;">
+            <div style="border-bottom:1px dotted #000; font-weight:bold; font-size:15px; display:inline-block; min-width:80%;">${escapeHtml(docName)} ${docQual ? escapeHtml(docQual) : ''}</div>
+            <div style="font-size:11px; font-style:italic; margin-bottom:8px;">(Name and qualification of the Registered Medical Practitioner in block letters)</div>
+
+            <div style="border-bottom:1px dotted #000; font-weight:500; font-size:13.5px; display:inline-block; min-width:80%;">${escapeHtml(docAddr)}</div>
+            <div style="font-size:11px; font-style:italic; margin-bottom:14px;">(Full address of the Registered Medical Practitioner)</div>
+
+            <!-- DOCTOR / RMP SECTION 2 -->
+            ${rmp2Name ? `
+              <div style="border-bottom:1px dotted #000; font-weight:bold; font-size:15px; display:inline-block; min-width:80%;">${escapeHtml(rmp2Name)} ${rmp2Qual ? escapeHtml(rmp2Qual) : ''}</div>
+              <div style="font-size:11px; font-style:italic; margin-bottom:8px;">(Name and qualification of the Registered Medical Practitioner in block letters)</div>
+              <div style="border-bottom:1px dotted #000; font-weight:500; font-size:13.5px; display:inline-block; min-width:80%;">${escapeHtml(rmp2Addr)}</div>
+              <div style="font-size:11px; font-style:italic; margin-bottom:14px;">(Full address of the Registered Medical Practitioner)</div>
+            ` : `
+              <div style="border-bottom:1px dotted #000; height:18px; width:85%; margin-bottom:2px;"></div>
+              <div style="font-size:11px; font-style:italic; margin-bottom:8px;">(Name and qualification of the Registered Medical Practitioner in block letters)</div>
+              <div style="border-bottom:1px dotted #000; height:18px; width:85%; margin-bottom:2px;"></div>
+              <div style="font-size:11px; font-style:italic; margin-bottom:14px;">(Full address of the Registered Medical Practitioner)</div>
+            `}
+          </div>
+
+          <!-- CERTIFICATION STATEMENT -->
+          <div style="margin-bottom: 14px; text-align:justify; line-height: 1.9;">
+            Hereby certify that * I/we/am/are of opinion formed in good faith, that it is necessary to terminate the pregnancy of
+            <span style="border-bottom:1px dotted #000; font-weight:bold; padding:0 8px;">${escapeHtml(m.patient_name)}</span> .
+          </div>
+
+          <div style="margin-bottom: 14px; text-align:justify; line-height: 1.9;">
+            Resident of <span style="border-bottom:1px dotted #000; font-weight:bold; padding:0 8px;">${escapeHtml(m.address || '—')}</span> .
+            <div style="font-size:11px; font-style:italic;">Full address of pregnant women in block letters</div>
+          </div>
+
+          <div style="margin-bottom: 14px;">
+            For the reasons given below**
+          </div>
+
+          <div style="margin-bottom: 20px; text-align:justify; line-height: 1.9;">
+            * I/We hereby give information that *I/We terminated the pregnancy of the woman referred to above bears the Serial No.
+            <span style="border-bottom:1px dotted #000; font-weight:bold; padding:0 12px;">${escapeHtml(serialNo)}</span>
+            the Admission Register of the hospital/approved place.
+          </div>
+
+          <!-- PLACE, DATE & RMP SIGNATURE 1 -->
+          <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:25px;">
+            <div>
+              <div><b>Place :</b> <span style="border-bottom:1px dotted #000; padding:0 10px;">${escapeHtml(placeStr)}</span></div>
+              <div style="margin-top:4px;"><b>Date :</b> <span style="border-bottom:1px dotted #000; padding:0 10px;">${escapeHtml(dateStr)}</span></div>
+            </div>
+            <div style="text-align:center;">
+              <div style="border-top:1px dotted #000; width:220px; padding-top:4px; font-weight:bold; font-size:12px;">
+                Signature of Registered Medical Practitioner
+              </div>
+            </div>
+          </div>
+
+          <!-- FOOTER REASONS & NOTES -->
+          <div style="font-size:12px; line-height:1.6; border-top:1px dashed #666; padding-top:10px; margin-top:15px;">
+            <div style="margin-bottom:4px;">Strike out whichever is not applicable.</div>
+            <div style="margin-bottom:6px;">** of the reasons specified items (i) to (v) write the one which is appropriate :</div>
+            
+            <div style="margin-left:12px; line-height:1.7;">
+              <div style="${reasonText.includes('(i)') ? 'font-weight:bold;' : ''}">(i) In order to save the life of the pregnant woman</div>
+              <div style="${reasonText.includes('(ii)') ? 'font-weight:bold;' : ''}">(ii) In order to prevent grave injury to the physical and mental health of the pregnant woman.</div>
+              <div style="${reasonText.includes('(iii)') ? 'font-weight:bold;' : ''}">(iii) In view of the substantial risk that if the child was born it would suffer from such physical or mental abnormalities as to be seriously handicapped.</div>
+              <div style="${reasonText.includes('(iv)') ? 'font-weight:bold;' : ''}">(iv) As the pregnancy is alleged by pregnant woman to have been caused by rape .</div>
+              <div style="${reasonText.includes('(v)') ? 'font-weight:bold;' : ''}">(v) As the pregnancy has occurred as result of failure of any contraceptive device or methods used by married woman or her husband for the purpose of limiting the number of children :</div>
+            </div>
+
+            <div style="margin-top:10px; text-align:justify; font-size:11.5px; font-style:italic;">
+              Note : account may be taken of the pregnant woman actual or reasonably foreseeable environment in determining whether the continuance of her pregnancy would involve a grave injury to her physical or mental health.
+            </div>
+
+            <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-top:30px;">
+              <div>
+                <div><b>Place :</b> <span style="border-bottom:1px dotted #000; padding:0 10px;">${escapeHtml(placeStr)}</span></div>
+                <div style="margin-top:4px;"><b>Date :</b> <span style="border-bottom:1px dotted #000; padding:0 10px;">${escapeHtml(dateStr)}</span></div>
+              </div>
+              <div style="text-align:center;">
+                <div style="border-top:1px dotted #000; width:260px; padding-top:4px; font-weight:bold; font-size:12px;">
+                  Signature of Registered Medical Practitioner / Practitioners
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+      document.getElementById('receipt-doc').innerHTML = html;
+      openModal('modal-receipt');
+    }
+
+    function printFormC(m) {
+      const s = hospitalSettings;
+      let ef = {};
+      try {
+        ef = typeof m.extra_fields_json === 'string' ? JSON.parse(m.extra_fields_json || '{}') : (m.extra_fields_json || {});
+      } catch(e) { ef = {}; }
+
+      const dateStr = formatDate(m.entry_date);
+      const mtpNo = ef.serial_no || m.entry_no || '';
+      const husbandDw = m.husband_father_name || ef.daughter_wife_of || '—';
+      const ageStr = m.age || '—';
+      const permAddress = ef.permanent_address || m.address || '—';
+      const presentAddress = m.address || '—';
+      const hospName = s.hospital_name || 'Maale Hospital';
+      const placeStr = ef.place || 'Thane';
+      const stateStr = ef.state || 'Maharashtra';
+
+      const gName = ef.guardian_name || '';
+      const gDw = ef.guardian_daughter_wife || '';
+      const gAge = ef.guardian_age || '';
+      const gPermAddr = ef.guardian_perm_address || '';
+      const gPresAddr = ef.guardian_present_address || '';
+
+      const html = `
+        <div style="font-family:'Times New Roman', Times, serif; color:#000; padding:20px 30px; line-height:1.8; font-size:14.5px; max-width:800px; margin:0 auto;">
+          
+          <!-- TOP DATE & MTP NO -->
+          <div style="display:flex; justify-content:space-between; margin-bottom: 25px; font-weight:bold;">
+            <div>Date : <span style="border-bottom:1px dotted #000; padding:0 8px;">${escapeHtml(dateStr)}</span></div>
+            <div>MTP No. <span style="border-bottom:1px dotted #000; padding:0 8px;">${escapeHtml(mtpNo)}</span></div>
+          </div>
+
+          <!-- TITLE / HEADER -->
+          <div style="text-align:center; margin-bottom: 30px;">
+            <h2 style="font-size:22px; font-weight:bold; margin:0 0 2px 0; letter-spacing:1px;">FORM C</h2>
+            <div style="font-size:14px; font-style:italic;">(See rule - 5)</div>
+          </div>
+
+          <!-- SECTION 1: ADULT WOMAN CONSENT -->
+          <div style="text-align:justify; margin-bottom:20px; line-height:2.2;">
+            I, <span style="border-bottom:1px dotted #000; font-weight:bold; padding:0 10px;">${escapeHtml(m.patient_name)}</span><br>
+            Daughter / Wife of <span style="border-bottom:1px dotted #000; font-weight:bold; padding:0 10px;">${escapeHtml(husbandDw)}</span><br>
+            aged about <span style="border-bottom:1px dotted #000; font-weight:bold; padding:0 8px;">${escapeHtml(ageStr)}</span> years of <span style="border-bottom:1px dotted #000; font-weight:bold; padding:0 10px;">${escapeHtml(permAddress)}</span> .<br>
+            <div style="font-size:12px; font-style:italic; margin-top:-6px; margin-bottom:8px;">(here state the permanent address).</div>
+            
+            At present residing at <span style="border-bottom:1px dotted #000; font-weight:bold; padding:0 10px;">${escapeHtml(presentAddress)}</span> do hereby give my consent to the termination of my pregnancy at <span style="border-bottom:1px dotted #000; font-weight:bold; padding:0 10px;">${escapeHtml(hospName)}</span> .<br>
+            <div style="font-size:12px; font-style:italic; margin-top:-6px; margin-bottom:12px;">(State the name of the place where the pregnancy is to be terminated)</div>
+            
+            <div style="display:flex; gap:30px; margin-top:8px;">
+              <div><b>Place :</b> <span style="border-bottom:1px dotted #000; padding:0 10px;">${escapeHtml(placeStr)}</span></div>
+              <div><b>State :</b> <span style="border-bottom:1px dotted #000; padding:0 10px;">${escapeHtml(stateStr)}</span></div>
+            </div>
+          </div>
+
+          <!-- SIGNATURES 1 -->
+          <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-top:40px; margin-bottom:40px;">
+            <div style="border-top:1px dotted #000; width:200px; text-align:center; padding-top:4px; font-weight:bold; font-size:13px;">
+              Relative. Signature.
+            </div>
+            <div style="border-top:1px dotted #000; width:200px; text-align:center; padding-top:4px; font-weight:bold; font-size:13px;">
+              Pt. Signature
+            </div>
+          </div>
+
+          <!-- SECTION 2: GUARDIAN CONSENT (FOR LUNATIC OR MINOR) -->
+          <div style="border-top:1px dashed #888; padding-top:20px; margin-top:20px;">
+            <div style="text-align:center; font-style:italic; font-weight:bold; font-size:13px; margin-bottom:15px;">
+              (To be filled in by guardian where the woman is a lunatic or minor)
+            </div>
+
+            <div style="text-align:justify; line-height:2.2;">
+              I, <span style="border-bottom:1px dotted #000; font-weight:bold; padding:0 10px;">${escapeHtml(gName || '________________________')}</span> daughter / wife of <span style="border-bottom:1px dotted #000; font-weight:bold; padding:0 10px;">${escapeHtml(gDw || '________________________')}</span><br>
+              aged about <span style="border-bottom:1px dotted #000; font-weight:bold; padding:0 8px;">${escapeHtml(gAge || '____')}</span> years of <span style="border-bottom:1px dotted #000; font-weight:bold; padding:0 10px;">${escapeHtml(gPermAddr || '________________________________')}</span> at present residing at <span style="border-bottom:1px dotted #000; font-weight:bold; padding:0 10px;">${escapeHtml(gPresAddr || '________________________________')}</span><br>
+              hereby give my consent to the termination of the pregnancy my ward <span style="border-bottom:1px dotted #000; font-weight:bold; padding:0 10px;">${escapeHtml(m.patient_name)}</span> who is minor / lunatic at <span style="border-bottom:1px dotted #000; font-weight:bold; padding:0 10px;">${escapeHtml(hospName)}</span> .<br>
+              <div style="font-size:12px; font-style:italic; margin-top:-6px; margin-bottom:12px;">(Place of termination of pregnancy)</div>
+
+              <div style="margin-top:10px;"><b>Place :</b> <span style="border-bottom:1px dotted #000; padding:0 10px;">${escapeHtml(placeStr)}</span></div>
+              <div style="margin-top:6px;"><b>Date :</b> <span style="border-bottom:1px dotted #000; padding:0 10px;">${escapeHtml(dateStr)}</span></div>
+            </div>
+
+            <div style="display:flex; justify-content:flex-end; margin-top:40px;">
+              <div style="border-top:1px dotted #000; width:220px; text-align:center; padding-top:4px; font-weight:bold; font-size:13px;">
+                Pt Signature
+              </div>
+            </div>
+          </div>
+
+        </div>
+      `;
+      document.getElementById('receipt-doc').innerHTML = html;
+      openModal('modal-receipt');
+    }
+
+    function printMtpPackage(m) {
+      printRmoFormI(m);
+      const formIHtml = document.getElementById('receipt-doc').innerHTML;
+      printFormC(m);
+      const formCHtml = document.getElementById('receipt-doc').innerHTML;
+
+      document.getElementById('receipt-doc').innerHTML = `
+        <div>
+          ${formIHtml}
+          <div style="page-break-before: always; margin-top:30px; border-top:1px dashed #ccc; padding-top:20px;"></div>
+          ${formCHtml}
+        </div>
+      `;
+      openModal('modal-receipt');
+    }
+
+    // ══════════════════════════════════════════════
+    // ── DOCTOR & REFERRAL ANALYTICS ──
+    // ══════════════════════════════════════════════
+    async function openDoctorAnalyticsModal(docId) {
+      const doc = doctors.find(d => d.id === docId);
+      if (!doc) return;
+      document.getElementById('doc-analytics-name').textContent = doc.name;
+      document.getElementById('doc-analytics-spec').textContent = doc.specialization;
+
+      try {
+        const res = await fetch(`${API}/doctors/${docId}/patients`);
+        const data = await res.json();
+        currentDocAnalytics = data;
+
+        document.getElementById('doc-stat-weekly').textContent = data.weekly_count || 0;
+        document.getElementById('doc-stat-monthly').textContent = data.monthly_count || 0;
+        document.getElementById('doc-stat-total').textContent = data.total_count || 0;
+
+        document.getElementById('doc-tab-cnt-weekly').textContent = data.weekly_count || 0;
+        document.getElementById('doc-tab-cnt-monthly').textContent = data.monthly_count || 0;
+        document.getElementById('doc-tab-cnt-all').textContent = data.total_count || 0;
+
+        const monthSel = document.getElementById('doc-month-select');
+        if (monthSel) {
+          const months = Object.keys(data.by_month || {}).sort().reverse();
+          monthSel.innerHTML = months.length ? months.map(m => `<option value="${m}">${m}</option>`).join('') : `<option value="">No records</option>`;
+        }
+
+        switchDocPatientTab('weekly');
+        openModal('modal-doctor-analytics');
+      } catch (e) {
+        showToast('Failed to load doctor analytics', 'error');
+      }
+    }
+
+    function switchDocPatientTab(tab) {
+      docPatientActiveTab = tab;
+      document.getElementById('tab-docp-weekly-btn').classList.toggle('active', tab === 'weekly');
+      document.getElementById('tab-docp-monthly-btn').classList.toggle('active', tab === 'monthly');
+      document.getElementById('tab-docp-all-btn').classList.toggle('active', tab === 'all');
+
+      const monthWrap = document.getElementById('doc-month-select-wrap');
+      if (monthWrap) monthWrap.style.display = tab === 'monthly' ? 'flex' : 'none';
+
+      if (!currentDocAnalytics) return;
+
+      let list = [];
+      if (tab === 'weekly') list = currentDocAnalytics.weekly_patients || [];
+      else if (tab === 'all') list = currentDocAnalytics.all_patients || [];
+      else if (tab === 'monthly') {
+        const monthSel = document.getElementById('doc-month-select');
+        const selectedMonth = monthSel ? monthSel.value : '';
+        list = (currentDocAnalytics.by_month && currentDocAnalytics.by_month[selectedMonth]) || currentDocAnalytics.monthly_patients || [];
+      }
+      renderDocPatientTable(list);
+    }
+
+    function renderDocMonthlyPatients(monthStr) {
+      if (docPatientActiveTab === 'monthly' && currentDocAnalytics) {
+        const list = (currentDocAnalytics.by_month && currentDocAnalytics.by_month[monthStr]) || [];
+        renderDocPatientTable(list);
+      }
+    }
+
+    function renderDocPatientTable(list) {
+      const tbody = document.getElementById('doc-patient-tbody');
+      tbody.innerHTML = list.length ? list.map(p => `
+        <tr>
+          <td><div class="patient-name">${p.patient_name}</div></td>
+          <td><span class="badge badge-${p.type === 'IPD' ? 'admitted' : 'discharged'}">${p.type}</span></td>
+          <td>${p.age} yrs / ${p.gender}</td>
+          <td>${p.phone || '—'}</td>
+          <td>${formatDate(p.visit_date)} ${p.visit_time || ''}</td>
+          <td>${truncate(p.diagnosis || p.symptoms || '—', 35)}</td>
+        </tr>
+      `).join('') : `<tr><td colspan="6"><div class="empty-state"><p>No patient records for this period</p></div></td></tr>`;
+    }
+
+    async function openReferralAnalyticsModal(refId) {
+      const ref = referralDoctors.find(r => r.id === refId);
+      if (!ref) return;
+      document.getElementById('ref-analytics-name').textContent = ref.name;
+      document.getElementById('ref-analytics-hosp').textContent = ref.hospital || ref.specialization || 'Referral Doctor';
+
+      try {
+        const res = await fetch(`${API}/referral_doctors/${refId}/patients`);
+        const data = await res.json();
+        currentRefAnalytics = data;
+
+        document.getElementById('ref-stat-total').textContent = data.total_count || 0;
+
+        const tbody = document.getElementById('ref-patient-tbody');
+        const list = data.patients || [];
+        tbody.innerHTML = list.length ? list.map(p => `
+          <tr>
+            <td><div class="patient-name">${p.patient_name}</div></td>
+            <td><span class="badge badge-${p.type === 'IPD' ? 'admitted' : 'discharged'}">${p.type}</span></td>
+            <td>${p.age} yrs / ${p.gender}</td>
+            <td>${p.phone || '—'}</td>
+            <td><small style="color:var(--teal)">${p.doctor_name || '—'}</small></td>
+            <td>${formatDate(p.visit_date)}</td>
+          </tr>
+        `).join('') : `<tr><td colspan="6"><div class="empty-state"><p>No referred patients found</p></div></td></tr>`;
+
+        openModal('modal-referral-analytics');
+      } catch (e) {
+        showToast('Failed to load referral analytics', 'error');
+      }
+    }
+
     // ── UTILS ──
     function formatDate(d) {
       if (!d) return '—';
@@ -4753,24 +5997,18 @@
     let currentUser = null;
 
     function checkAuth() {
-      const saved = localStorage.getItem('medicare_user');
-      if (saved) {
-        try {
-          currentUser = JSON.parse(saved);
-          applyUserRole(currentUser);
-          document.getElementById('login-overlay').style.display = 'none';
-        } catch(e) {
-          showLoginModal();
-        }
-      } else {
-        showLoginModal();
-      }
+      localStorage.removeItem('medicare_user');
+      showLoginModal();
     }
 
     function showLoginModal() {
       document.getElementById('login-overlay').style.display = 'flex';
+      const usrEl = document.getElementById('login-username');
+      if (usrEl) usrEl.value = '';
       const pwdEl = document.getElementById('login-password');
       if (pwdEl) pwdEl.value = '';
+      const errDiv = document.getElementById('login-error');
+      if (errDiv) errDiv.style.display = 'none';
       currentUser = null;
     }
 
@@ -4850,10 +6088,10 @@
         if (role === 'doctor') {
           item.style.display = 'flex';
         } else {
-          // Operator & Receptionist: access to Patient Records, Billing, and Sonography Form
-          if (nav === 'patients' || nav === 'billing' || nav === 'sonography') {
+          // Operator & Receptionist: access to Patient Records, Billing, Sonography, and MTP
+          if (nav === 'patients' || nav === 'billing' || nav === 'sonography' || nav === 'mtp') {
             item.style.display = 'flex';
-          } else if (onclickStr.includes('openOutpatientModal') || onclickStr.includes('openInpatientModal') || onclickStr.includes('switchSonoTab') || onclickStr.includes('openBillModal')) {
+          } else if (onclickStr.includes('openOutpatientModal') || onclickStr.includes('openInpatientModal') || onclickStr.includes('switchSonoTab') || onclickStr.includes('switchMtpTab') || onclickStr.includes('openBillModal')) {
             item.style.display = 'flex';
           } else {
             item.style.display = 'none';
