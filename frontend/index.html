@@ -360,6 +360,15 @@
       opacity: 0.9;
     }
 
+    .btn-success {
+      background: #10b981;
+      color: white;
+    }
+
+    .btn-success:hover {
+      background: #059669;
+    }
+
     .btn-sm {
       padding: 5px 12px;
       font-size: 12px;
@@ -1911,9 +1920,10 @@
             </div>
           </div>
 
-          <div class="modal-footer" style="border-top:1px solid var(--border);padding:16px 0">
+          <div class="modal-footer" style="border-top:1px solid var(--border);padding:16px 0;display:flex;gap:10px;justify-content:flex-end;">
             <button class="btn btn-secondary" onclick="resetBillForm()">Reset</button>
-            <button class="btn btn-primary" onclick="saveBill(true)">Save &amp; Print Bill</button>
+            <button class="btn btn-success" id="btn-bill-save" onclick="saveBill(false)">💾 Save Only</button>
+            <button class="btn btn-primary" id="btn-bill-saveprint" onclick="saveBill(true)">🖨️ Save &amp; Print Bill</button>
           </div>
         </div>
 
@@ -3352,6 +3362,7 @@
     let sonoRecords = [], sonoFilters = {};
     let mtpRecords = [], mtpFilters = {};
     let currentBillType = 'OPD';
+    let editingBillId = null;
     let billItems = [];
     let billTemplates = { OPD: [], IPD: [] };
     let wardTariffs = {};
@@ -4353,7 +4364,7 @@
       resetBillForm(type);
     }
 
-    function setBillType(type) {
+    function setBillType(type, keepItems = false) {
       currentBillType = type;
       document.getElementById('bt-opd').classList.toggle('active', type === 'OPD');
       document.getElementById('bt-ipd').classList.toggle('active', type === 'IPD');
@@ -4363,20 +4374,68 @@
       document.getElementById('bill-disdate-wrap').style.display = showIpd ? 'flex' : 'none';
       document.getElementById('bill-advance-row').style.display = showIpd ? 'flex' : 'none';
 
-      billItems = (billTemplates[type] || []).map(it => ({ ...it }));
+      if (!keepItems) {
+        billItems = (billTemplates[type] || []).map(it => ({ ...it }));
+      }
       renderBillItems();
     }
 
     function resetBillForm(type) {
+      editingBillId = null;
       ['bill-name', 'bill-age', 'bill-phone', 'bill-address', 'bill-indoor', 'bill-admdate', 'bill-disdate', 'bill-diagnostic', 'bill-utr']
-        .forEach(id => document.getElementById(id).value = '');
+        .forEach(id => {
+          const el = document.getElementById(id);
+          if (el) el.value = '';
+        });
       if (document.getElementById('bill-patient-select')) document.getElementById('bill-patient-select').value = '';
       if (document.getElementById('bill-advance-paid')) document.getElementById('bill-advance-paid').value = 0;
       setSelectVal('bill-gender', 'bill-gender-other', '');
       document.getElementById('bill-doctor').value = '';
       document.getElementById('bill-date').value = new Date().toISOString().split('T')[0];
       setPayMode('cash');
+
+      const btnSave = document.getElementById('btn-bill-save');
+      if (btnSave) btnSave.textContent = '💾 Save Only';
+      const btnSavePrint = document.getElementById('btn-bill-saveprint');
+      if (btnSavePrint) btnSavePrint.textContent = '🖨️ Save & Print Bill';
+
       setBillType(type || currentBillType || 'OPD');
+    }
+
+    function editBill(id) {
+      const b = bills.find(x => x.id === id);
+      if (!b) return showToast('Bill record not found', 'error');
+
+      editingBillId = b.id;
+      setBillType(b.bill_type, true);
+
+      document.getElementById('bill-name').value = b.patient_name || '';
+      document.getElementById('bill-age').value = b.age || '';
+      setSelectVal('bill-gender', 'bill-gender-other', b.gender || '');
+      document.getElementById('bill-phone').value = b.phone || '';
+      document.getElementById('bill-address').value = b.address || '';
+      document.getElementById('bill-indoor').value = b.indoor_no || '';
+      document.getElementById('bill-admdate').value = b.admission_date || '';
+      document.getElementById('bill-disdate').value = b.discharge_date || '';
+      document.getElementById('bill-diagnostic').value = b.diagnostic || '';
+      document.getElementById('bill-doctor').value = b.doctor_id || '';
+      document.getElementById('bill-date').value = b.bill_date || '';
+      if (document.getElementById('bill-advance-paid')) {
+        document.getElementById('bill-advance-paid').value = b.advance_paid || 0;
+      }
+      setPayMode(b.payment_mode || 'cash');
+      if (b.utr_code) document.getElementById('bill-utr').value = b.utr_code;
+
+      billItems = typeof b.items_json === 'string' ? JSON.parse(b.items_json) : (b.items_json || []);
+      renderBillItems();
+
+      const btnSave = document.getElementById('btn-bill-save');
+      if (btnSave) btnSave.textContent = '💾 Update Bill';
+      const btnSavePrint = document.getElementById('btn-bill-saveprint');
+      if (btnSavePrint) btnSavePrint.textContent = '🖨️ Update & Print Bill';
+
+      switchBillingTab('new');
+      showToast(`Editing Bill ${b.bill_no}`);
     }
 
     function addBillItem(desc, amount) {
@@ -4468,10 +4527,14 @@
       if (payMode === 'online' && !body.utr_code)
         return showToast('Please enter the UTR / transaction code for online payment', 'error');
 
-      const r = await fetch(API + '/bills', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+      const url = editingBillId ? `${API}/bills/${editingBillId}` : `${API}/bills`;
+      const method = editingBillId ? 'PUT' : 'POST';
+
+      const r = await fetch(url, { method: method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
       const data = await r.json();
       if (r.ok) {
-        showToast(`Bill ${data.bill_no} generated successfully`);
+        showToast(editingBillId ? `Bill ${data.bill_no || ''} updated successfully` : `Bill ${data.bill_no} generated successfully`);
+        editingBillId = null;
         resetBillForm(currentBillType);
         await loadBills();
         loadDashboard();
@@ -4508,6 +4571,7 @@
       <td><span class="badge badge-${b.payment_mode === 'online' ? 'discharged' : 'admitted'}">${b.payment_mode === 'online' ? 'Online' : 'Cash'}</span></td>
       <td>
         <div class="actions-cell">
+          <button class="btn btn-primary btn-sm" onclick="editBill('${b.id}')">Edit</button>
           <button class="btn btn-secondary btn-sm" onclick="printBill(bills.find(x=>x.id==='${b.id}'))">Print</button>
           <button class="btn btn-danger btn-sm" onclick="deleteBill('${b.id}')">Delete</button>
         </div>

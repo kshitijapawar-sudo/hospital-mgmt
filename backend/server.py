@@ -697,6 +697,34 @@ class Handler(BaseHTTPRequestHandler):
                                         FROM bills b JOIN doctors d ON b.doctor_id=d.id
                                         WHERE b.id=?""", (rid,)).fetchone()
                     self.send_json(dict(row) if row else {'error':'Not found'}, 200 if row else 404)
+                elif method == 'PUT':
+                    b = self.read_body()
+                    required = ['bill_type','bill_date','patient_name','doctor_id','items']
+                    if any(not b.get(k) for k in required):
+                        return self.send_json({'error': 'Required fields missing'}, 400)
+                    if b['bill_type'] not in ('OPD','IPD'):
+                        return self.send_json({'error': 'Invalid bill type'}, 400)
+                    if b.get('payment_mode') == 'online' and not b.get('utr_code'):
+                        return self.send_json({'error': 'UTR / transaction code required for online payment'}, 400)
+                    items = b['items']
+                    total = sum(float(it.get('amount') or 0) for it in items)
+                    adv_paid = float(b.get('advance_paid') or 0)
+                    net_total = float(b.get('net_total') if b.get('net_total') is not None else max(0, total - adv_paid))
+                    c.execute("""UPDATE bills SET
+                        bill_type=?, bill_date=?, patient_name=?, age=?, gender=?, address=?, phone=?,
+                        indoor_no=?, admission_date=?, discharge_date=?, diagnostic=?, doctor_id=?,
+                        items_json=?, total=?, payment_mode=?, utr_code=?, advance_paid=?, net_total=?
+                        WHERE id=?""",
+                        (b['bill_type'], b['bill_date'], b['patient_name'], str(b.get('age','')),
+                         b.get('gender',''), b.get('address',''), b.get('phone',''),
+                         b.get('indoor_no',''), b.get('admission_date',''), b.get('discharge_date',''),
+                         b.get('diagnostic',''), b['doctor_id'], json.dumps(items), total,
+                         b.get('payment_mode','cash'), b.get('utr_code',''), adv_paid, net_total, rid))
+                    conn.commit()
+                    row = c.execute("""SELECT b.*, d.name as doctor_name, d.specialization
+                                        FROM bills b JOIN doctors d ON b.doctor_id=d.id
+                                        WHERE b.id=?""", (rid,)).fetchone()
+                    self.send_json(dict(row) if row else {'success': True})
                 elif method == 'DELETE':
                     c.execute("DELETE FROM bills WHERE id=?", (rid,))
                     conn.commit()
